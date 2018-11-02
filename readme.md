@@ -68,8 +68,9 @@ order_id:合同编号
 /cancelorder?orderid=xxx
 ```
 返回值为Json格式
-```
+
 成功的格式：
+```
 {
    "msg" : "order_id",
    "status" : "OK"
