@@ -79,15 +79,81 @@ order_id:合同编号
 ```
 /orders
 ```
+成功的格式：
+```
+{
+   "data" : [
+      {
+         "datetime" : "2018110523:08:52",       // 委托时间
+         "dealt_amount" : 0.0,                  // 成交量
+         "dealt_price" : 0.0,                   // 成交价
+         "order_id" : "207",                    // 委托编号
+         "order_price" : 2.6000000000000001,    // 委托价格
+         "order_state" : "未报",                // 状态：未报，已报，已成，已撤。。。等
+         "order_type" : "证券买入",              // 委托类型，买入/卖出
+         "order_volume" : 100,                  // 委托数量，单位（股）
+         "stock_account" : "A587641175",        // 股东账号  
+         "stock_code" : "510050",               // 证券代码
+         "stock_name" : "50ETF",                // 证券名称
+         "stock_type" : "上海Ａ股"               // 证券类型
+      }
+   ],
+   "status" : "OK"
+}
+```
 ##### 查询委托（从本地缓存）
 ```
 /orderlist
 ```
+成功的格式，同/orders
+
 ##### 查询持仓
 ```
 /positions
 ```
+成功的格式：
+```
+{
+   "data" : [
+      {
+         "cost_price" : 2.8279999999999998,
+         "cost_value" : 257.82999999999998,
+         "curr_profit" : -23.399999999999999,
+         "index" : 0,
+         "market" : "SH",
+         "market_value" : 259.39999999999998,
+         "profit_ratio" : -8.2743990000000007,
+         "stock_code" : "510050",
+         "stock_name" : "50ETF",
+         "stock_type" : "上海Ａ股",
+         "vol_actual" : 100,
+         "vol_evenup" : 100,
+         "vol_hold" : 100,
+         "vol_remain" : 100
+      },
+   ],
+   "status" : "OK"
+}
+```
 ##### 查询资金账户
 ```
 /account
+```
+成功的格式：
+```
+{
+   "data" : {
+      "asset_account" : "5207707",
+      "free_amount" : "",
+      "free_capital" : "-526.90",
+      "frozen_capital" : "",
+      "position_profit" : "-24.50",
+      "stock_cw" : "0.00",
+      "stock_market_value" : "526.90",
+      "today_profit" : "------",
+      "total_asset" : "",
+      "total_capital" : ""
+   },
+   "status" : "OK"
+}
 ```
