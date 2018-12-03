@@ -1,0 +1,20 @@
+.tinytooltip {
+	display: block;
+	position: absolute;
+	z-index: 1000;
+}
+
+.tinytooltip .message {
+	background: #f5f5f5;
+	padding: 8px;
+	border: 1px solid #737573;
+	border-radius: 3px;
+	display: block;
+	
+	font-size: 10px;
+	line-height: 14px;
+	text-align: left;
+	z-index: 2000;
+	position: relative;
+	word-wrap:break-word;
+}

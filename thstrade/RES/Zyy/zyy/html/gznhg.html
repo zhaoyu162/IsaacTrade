@@ -1,0 +1,382 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="pragma" content="no-cache"> 
+    <meta http-equiv="Cache-Control" content="no-cache, must-revalidate"> 
+    <meta http-equiv="expires" content="Wed, 26 Feb 1997 08:21:57 GMT">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+	<!-[if lte IE8]>
+		<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">
+	<![endif]->
+		<script type="text/javascript" src="./js/iepng.js" ></script>
+	<script type="text/javascript" src="../comm/jquery-1.6.1.js"></script> 
+	<script type="text/javascript" src="../comm/jquery.json-2.3-debug.js"></script> 	
+	<script type="text/javascript" src="../comm/hxcomm.js"></script> 	
+	<script type="text/javascript" src="./js/gzrequest.js"></script>
+	<script type="text/javascript" src="./js/gzManager.js"></script> 
+	<script type="text/javascript" src="./js/gzresult.js"></script> 
+	<script type="text/javascript" src="./js/gzParseData.js"></script> <!--增加数据解析文件-->
+	<script type="text/javascript" src="./js/gzUiEvent.js"></script> <!--将gzManager.js以功能分开函数-->
+	<link rel="stylesheet" href="css/gznhgSytle.css">
+	<script language=javascript src="./json2.js"></script>
+	
+	
+	
+<script Language="JavaScript">
+var g_LoadFile = false;		//页面加载完全标志，默认未加载完全（false），fnStart函数被调用表明页面已加载完全，将其值置为true
+var g_dlgSize = 'nType=0\nwidth=684\nheight=454\n';   // 页面大小
+
+var g_gpxx = new Array("sh_gpmc1","sh_gpmc2","sh_gpmc3","sh_gpmc4","sh_gpmc7","sz_gpmc1","sz_gpmc2","sz_gpmc3","sz_gpmc4","sz_gpmc7");	//委托品种股票信息表，股票代码 股票名称（例：'204001 GC001'）
+var g_cjqx = new Array("sh_cjqx1","sh_cjqx2","sh_cjqx3","sh_cjqx4","sh_cjqx7","sz_cjqx1","sz_cjqx2","sz_cjqx3","sz_cjqx4","sz_cjqx7");	//委托品种显示名称表（例：一天期）
+var g_IdIndex = new Array("sh_day1","sh_day2","sh_day3","sh_day4","sh_day7","sz_day1","sz_day2","sz_day3","sz_day4","sz_day7");	//委托品种最新价格id表 用于更新最新价格
+var g_arrGzInfoData = new Array(10);			//国债品种信息，二维数组,g_arrGzInfoData[10][9] gpdm,zxjg,mrj1,mrj2,mrj3,mrj4,mrj5,sxfDays,zjzyDays
+var g_tableIndex = -1;				//国债info表格下标
+var g_selectIndex = 0;				//价格下拉框下标,默认为买一
+
+var g_curUserInfo = "";				//用户userkey（券商Id_用户账号_营业部Id）
+var g_qsid = "";					//券商ID
+
+var g_callbackName = "";			//回调函数名称
+var g_callbackOnTimerName = "";	//定时器回调函数名称
+var g_zqdm = "";					//证券代码
+var g_price = "";					//委托价格
+var g_scdm = "";					//市场代码
+var g_zqmc = "";					//证券名称
+var g_count = "";					//买入数量
+var g_money = 0;					//委托金额，校验委托参数合法性使用
+var g_wtje = 0;						//委托金额 保存到全局变量，委托成功页面展示数据使用
+
+var g_codelist = "";				//代码列表（格式：行情市场1（代码1，代码2），行情市场2（代码1，代码2）等行情市场示例：上海A股（17）、上海债券（19）、深圳A股（33）、深圳债券（35））例：（'19(204001,204002),35(131810,131811)'）），从自运营服务器查询行情使用
+var g_datatype = "";				//查询类型（'1':最新价；'2':最新价及五档价格），从自运营服务器查询行情使用
+var g_mmlb = "";					//买卖方向（'B':买一价~买五价；'S':卖一价~卖五价），从自运营服务器查询行情使用
+var g_Timer = "";					//定时器ID
+var g_startMode = '';				//下单启动方式，"0",下单独立启动;"1",下单在行情客户端启动
+
+var g_wtjeAddTimer = null;			//出借金额微调按钮增加计时器ID
+var g_wtjeSubTimer = null;			//出借金额微调按钮减少计时器ID
+var g_wtKyzjLogFlag = false;		//委托上传资金日志标志，false:强制查资金不上传日志 ture:强制查资金上传日志
+var g_pkgver = "Ver1.59";			//Ver1.59版本修改内容：金额输入框，委托失败可用资金日志，ie版本 华菁证券上海市场单位 niuyaozong 20180829
+
+/*
+* 参数strParam说明：
+* 格式：参数个数|用户userkey（券商Id_用户账号_营业部Id）|hqid|运营位功能|所在菜单
+* 例如：4|90_220500040301_1055|0|0|0
+* hqid：国债固定为0
+* 运营位功能：’1’表示信用登录（信用单独站点），’0’表示普通登录   (信用账号用普通登录也是0)
+* 所在菜单： '0' // 股票业务;  '1'  // 融资融券; 
+*/
+function fnStart(strParam)
+{
+	g_LoadFile = true;	//页面加载完全置为true
+	
+	var array_param = new Array();
+	array_param = strParam.split('|');
+	if(array_param.length < 4) 
+	{ 
+		return; 
+	}
+
+	g_curUserInfo = array_param[1];
+	g_htmlReqStatus = array_param[2];
+	
+	var strsa = fnFunction('get_serverinfo', g_curUserInfo); //服务器站点（ip_port） E065.18.95.106及以上客户端支持
+	if(strsa != '') 
+	{
+		var objsa = new Function("return " + strsa)();
+		
+		if(objsa['port'] &&  objsa['port'].indexOf('-') != -1)	//客户端查服务器站点有bug，此处兼容处理 -28534 -> 37002
+		{
+			var tempPort = parseInt(objsa['port'], 10);
+			
+			tempPort = tempPort + 65536;
+			objsa['port'] = tempPort + '';
+		}
+	
+		d_sa = objsa['ip'] + '_' + objsa['port'];
+	}
+	
+	var array_user = new Array();
+	array_user = g_curUserInfo.split('_');
+	g_qsid = array_user[0];
+	d_fnStart = strParam.replace(/\|/g, ',');	// '|'是日志字段分隔符，此处替换成','
+	
+	var datatype = 'PAGE_CREATE';
+	var retcode = '0';
+	var retmsg = '页面创建成功';
+	var cbasdata = 'd_sa=' + d_sa + '|' + 'd_fnStart=' + d_fnStart;
+	
+	GZNHG_UploadLog(datatype, retcode, retmsg, cbasdata);
+	
+	fnFunction("hide_dlg", "");				//隐藏页面
+	fnFunction("set_titlebar", "0");		//标题由页面绘制，即无标题窗体
+	fnFunction("chg_dlgsize", g_dlgSize);	//设置页面大小
+	OnSleep(300);	//解决连续多次点击运营位碎屏问题
+
+	GZNHG_InitGzInfoData();	//初始化国债品种信息 二维数组，g_arrGzInfoData[10][9] 
+	
+	GZNHG_BindEvent();		//绑定事件
+	GZNHG_HanleIECompatibility();	//IE兼容性处理
+	
+	//查询信息入口，显示页面
+	fnGetAccountBalance();	//获取可用资金 同步
+	
+	g_callbackName = "GZNHG_QueryGzInfoFromZyyCallBack";		
+	GZNHG_QueryGzInfoFromZyy(g_callbackName);	//从自运营主站查询国债逆回购信息
+}
+
+function fnNotify(strNotifyType, strParam)
+{
+	//解决连续多次点击运营位，页面未加载完全，行情有推送数据调用页面（行情必须反注册才不推送数据）
+	if(strNotifyType != "hq_data" || !g_LoadFile || !strParam || strParam.indexOf('zqdm') == -1)
+	{
+		var datatype = 'PUSHHQ';
+		var retcode = '-1';
+		var retmsg = '推送行情数据异常';
+		var cbasdata = 'd_sa=' + d_sa + '|' + 'd_fnStart=' + d_fnStart + '||' + 'd_error=' + strNotifyType + '_' + strParam ;
+		
+		GZNHG_UploadLog(datatype, retcode, retmsg, cbasdata);
+	}
+
+	GZNHG_UpdateHqDataFromHq(strParam);
+}
+
+</script>
+
+</head>
+<body>
+<div class="BlockMain" id="BlockMain">
+	<div class="block_main_title" id="block_main_title">
+		<div class="block_main_head"  id="block_main_head">
+			<span>国债逆回购</span>
+		</div>
+	</div>
+	<div class="BlockClose" id="BlockMainClose"></div>
+	<div class="PageRoot hideHtml" id="PageRoot">
+		<div class="PageSize">
+			<div class="shanghaiMarket">
+				<div class="tableHead">
+					<br><p class="market">上海市场</p>
+					<p class="mixMoney">10万起步</p>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="0">
+							<tr class="data1"><span id="sh_cjqx1"></span></tr>
+							<tr class="data2"><span id="sh_gpmc1"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sh_day1"></span></tr>
+						</td>
+					</table>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="1">
+							<tr class="data1"><span id="sh_cjqx2"></span></tr>
+							<tr class="data2"><span id="sh_gpmc2"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sh_day2"></span></tr>
+						</td>
+					</table>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="2">
+							<tr class="data1"><span id="sh_cjqx3"></span></tr>
+							<tr class="data2"><span id="sh_gpmc3"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sh_day3"></span></tr>
+						</td>
+					</table>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="3">
+							<tr class="data1"><span id="sh_cjqx4"></span></tr>
+							<tr class="data2"><span id="sh_gpmc4"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sh_day4"></span></tr>
+						</td>
+					</table>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="4">
+							<tr class="data1"><span id="sh_cjqx7"></span></tr>
+							<tr class="data2"><span id="sh_gpmc7"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sh_day7"></span></tr>
+						</td>
+					</table>
+				</div>
+			</div>
+			<div class="shenzhenMarket">
+				<div class="tableHead">
+					<br><p class="market">深圳市场</p>
+					<p class="mixMoney">1000起步</p>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="5">
+							<tr class="data1"><span id="sz_cjqx1"></span></tr>
+							<tr class="data2"><span id="sz_gpmc1"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sz_day1"></span></tr>
+						</td>
+					</table>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="6">
+							<tr class="data1"><span id="sz_cjqx2"></span></tr>
+							<tr class="data2"><span id="sz_gpmc2"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sz_day2"></span></tr>
+						</td>
+					</table>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="7">
+							<tr class="data1"><span id="sz_cjqx3"></span></tr>
+							<tr class="data2"><span id="sz_gpmc3"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sz_day3"></span></tr>
+						</td>
+					</table>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="8">
+							<tr class="data1"><span id="sz_cjqx4"></span></tr>
+							<tr class="data2"><span id="sz_gpmc4"></span></tr><br class="tableBr">
+							<tr class="data3"><span id="sz_day4"></span></tr>
+						</td>
+					</table>
+				</div>
+				<div class="tableSort">
+					<table class="tableSize" >
+						<td index="9">
+							<tr class="data1"><span id="sz_cjqx7"></span></tr>
+							<tr class="data2"><span id="sz_gpmc7"></span></tr><br class="tableBr">
+							<tr class="data3"><span  id="sz_day7"></span></tr>
+						</td>
+					</table>
+				</div>
+			</div>
+			
+			<div class="textInfo">
+				<div class="lendMoneyTxt">
+					<p>出借金额：</p>
+				</div>
+				<div id="kongjian">
+ 					<p><input id="shuru" value="请输入出借金额"  onfocus="GZNHG_WtjeInputBoxOnGetFocus('shuru','请输入出借金额')" onblur="GZNHG_WtjeInputBoxOnLoseFocus('shuru','请输入出借金额')" onpaste="return false;" oncopy="return false;" onpropertychange="GZNHG_WtjeInputBoxOnInputZijinChange();" ></p>
+				</div>
+				<div class="tupian">
+					<div class="addMoney" onclick="GZNHG_WtjeInputBoxOnAddMoneyBtnClick();" ondblclick="GZNHG_WtjeInputBoxOnAddMoneyBtnDblClick();">	
+					</div>
+					<div id="subtractMoney" class="subtractMoney" onclick="GZNHG_WtjeInputBoxOnSubMoneyBtnClick();" ondblclick="GZNHG_WtjeInputBoxOnSubMoneyBtnDblClick();">
+					</div>
+				</div>
+				<div class="priceTxt">
+					<strong>价格：</strong>
+				</div>
+				<div class="form-group">
+					<div class="form-group-select" id="divselect">
+						<span class="fl" id="input-code"></span><span class="icon icon-select pngFix"></span><font id="default">买 一</font>
+						<ul class="form-group-options" style="display:none;">
+							<li style="background-color:white;" href="javascript:;" id="buy1">买 一</li>
+							<li style="background-color:white;" href="javascript:;" id="buy2">买 二</li>
+							<li style="background-color:white;" href="javascript:;" id="buy3">买 三</li>
+							<li style="background-color:white;" href="javascript:;" id="buy4">买 四</li>
+							<li style="background-color:white;" href="javascript:;" id="buy5">买 五</li>
+						</ul>
+					</div>
+				</div>	
+			</div>	
+			<div id="usableMoney">
+				<div class="usableMoneyTxt" id="useMoney">
+					<p>可用金额：</p>
+				</div>
+				<div class="haveMoney" id="acountMoney">
+					<span id="haveMoney"></span><font color="#000000">元</font>
+				</div>
+			</div>
+			<div class="PageBottom">
+				<div class="lendBtn"> 
+					<div id="btnLend" class="lendBtnDisable" disabled="disabled" onclick="GZNHG_OnLendBtnClick();">出借</div>
+				</div>
+				<div id="interestRate">
+				</div>
+			</div>
+			<div id="BlockConfirm" class="BlockConfirm hideHtml">
+				<div class="BlockConfirmHead">
+					<div class="BlockConfirmTital">
+						<p>委托确认</p>
+					</div>				
+				</div>
+				<div class="BlockConfirmInfo">
+					<div class="BlockConfirmStockText">交易品种</div>
+					<div id="BlockConfirmStock"class="BlockConfirmStock"></div>
+					<div class="BlockConfirmStockText">年化收益</div>
+					<div id="BlockConfirmPrice" class="BlockConfirmStock"></div>
+					<div class="BlockConfirmStockText">借出金额</div>
+					<div id="BlockConfirmAmount" class="BlockConfirmStock"></div>
+					<div class="BlockConfirmText">
+						<p>您是否确认以上委托?</p>
+					</div>
+				</div>
+				<div class="BlockConfirmBtn">
+					<div class="BlockConfirmBtnEnsure" onclick="GZNHG_OnWtConfirmBoxEnsureBtnClick();">确定</div>
+					<div class="BlockConfirmBtnCancel" onclick="GZNHG_OnWtConfirmBoxCancelBtnClick();">取消</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="success hideHtml" id="success">
+		<div class="PageSize">
+			<div class="pictureSuccess">
+				<div class="IMGSuccess"></div>
+			</div>
+			<div class="theadSuccess">
+				<table id="tableTheadSuccess">
+					<tr>
+						<td>证券代码</td>
+						<td>证券名称</td>
+						<td>操作</td>
+						<td>委托数量</td>
+						<td>委托金额</td>
+						<td>合同编号</td>
+					</tr>
+				</table>
+			</div>
+			<div class="tableSuccess">
+				<table id="tableSuccessMSG">
+					<tr>
+						<td id="zqdm"></td>
+						<td id="zqmc"></td>
+						<td id="czlb"></td>
+						<td id="wtsl"></td>
+						<td id="wtje"></td>
+						<td id="htbh"></td>
+					</tr>
+				</table>
+			</div>
+			<div class="warmPrompt">
+				<p>&nbsp&nbsp&nbsp&nbsp&nbsp温馨提示：可以去委托标签下查看委托状态</p>
+			</div>
+			<div class="btnSuccess">
+				<div id="buttonSuccess">关闭</div>
+			</div>
+		</div>
+	</div>
+	<div class="failure hideHtml" id="failure">
+		<div class="PageSize">
+			<div class="pictureFailure">
+				<div class="IMGFailure"> </div>
+			</div>
+			<div class="faildPrompt">
+				<p >&nbsp&nbsp&nbsp&nbsp&nbsp提交失败,原因:<span id="faildPrompt"></span></p>
+			</div>
+			<div class="btnFailure">
+				<span id="returnUpPage"onclick="GZNHG_OnWtFailedPagePreviewBtnClick()";>上一页</span>
+				<div class="buttonFailure" id="buttonFailure">关闭</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,550 @@
+/*************************************************************************
+ *	creator 	: @ji
+ *	Function	: 国债逆回购页面样式css文件
+ *	Date		：2017-01-23
+ *************************************************************************/
+@charset "utf-8";
+*{margin:0;}
+html{
+	overflow: visible;
+}
+b{
+	font-size: 12pt;
+};
+table{
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+body{
+	font:9pt  "Microsoft YaHei","WenQuanYi Micro Hei","sans-serif"; 
+	margin:0;
+	padding:0;
+	cursor:default;
+}
+.BlockMain{
+	width:682px;
+	height:454px;
+	margin:2px 0 0 2px;
+}
+.PageSize{
+	width:644px; 
+	height:420px;
+	margin-left:10px;
+}
+/**页面标题栏,包括关闭按钮**/
+.block_main_title{
+	width:100%;
+	height:30px;
+	background:#4084D5;
+}
+.block_main_head{
+	width:150px;
+	height:28px;
+	line-height:28px;
+	font-size:10pt;
+	color:#BBE5FF;
+	float:left;
+	margin-left:20px;
+}
+.BlockClose{
+	width:30px;
+	height:30px;
+	position:absolute;
+	left:654px;
+	top:2px;
+	background:url('../images/BtnCloseNormal.bmp') no-repeat; 
+	float:left;
+}
+.BlockClose:hover{
+	width:30px;
+	height:30px;
+	position:absolute;
+	left:654px;
+	background:url('../images/BtnCloseHover.bmp') no-repeat;
+	float:left;
+}
+.BlockClose:active{
+	width:30px;
+	height:30px;
+	position:absolute;
+	left:654px;
+	background:url('../images/BtnClosePushed.bmp') no-repeat;
+	float:left;
+}
+/**资产页面**/
+.PageRoot{
+	width:100%; 
+	height:424px;
+	text-align:center;
+}
+
+/**上海、深圳市场**/
+.shanghaiMarket{
+	width:100%;
+	height:118px;
+	border-bottom:1px solid #EEEFEF;
+}
+.shenzhenMarket{
+	width:100%;
+	height:118px;
+	border-bottom:1px solid #EEEFEF;
+}
+.tableHead{
+	width:72px;
+	height:90px;
+	float:left;
+	margin-top:14px;
+	margin-bottom:14px;
+}
+.tableSort{
+	width:102px; 
+	height:90px;
+	float:left;
+	margin-top:14px;
+	margin-bottom:14px;
+	margin-left:10px;
+	margin-right:0px;
+	background:#F7F7F7;
+	border:1px solid #EEEFEF;
+	cursor:pointer;
+}
+.market{
+	width:72px;
+	height:50px;
+	font:13pt "Microsoft YaHei";
+	color:#222222; 
+	font-weight:600;
+	line-height:40px;
+}
+.mixMoney{
+	width:70px;
+	height:40px;
+	font:9pt "Microsoft YaHei";
+	color:#666; 
+	float:left;
+}
+.tableSize{
+	width:102px;
+	text-align:left;
+}
+.data1{
+	font-size:13pt;
+	color:#222222;
+	font-weight:600;
+	line-height:30px;
+	text-indent:5px;
+}
+.data2{
+	font-size:9pt;
+	color:#666;
+	text-indent:5px;
+}
+.tableBr{
+	line-height:10px;
+}
+.data3{
+	font-size:16pt;
+	color:#FF0000;
+	text-indent:5px;
+}
+.textInfo{
+	width:100%;
+	height:27px;
+	margin-top:10px;
+}
+.lendMoneyTxt{
+	width:70px;
+	height:27px; 
+	float:left; 
+	line-height:27px;
+	margin:2px;
+}
+#kongjian{
+	width:150px;
+	height:27px;
+	line-height:27px;
+	float:left; 
+	overflow:visible;
+}
+.tupian{
+	width:16px;
+	height:20px;
+	float:left;
+	margin: 5px 0 0 10px;
+}
+.addMoney{
+	width:16px;
+	height:9px;
+	cursor:pointer;
+	background:url('../images/add.png') no-repeat;
+} 
+.subtractMoney{
+	width:16px;
+	height:9px;
+	margin-top:2px;
+	cursor:pointer;
+	background:url('../images/subtract.png') no-repeat;
+}
+.priceTxt{
+	width:90px;
+	height:27px;
+	float:left; 
+	text-align:left;
+	line-height:27px;
+	text-indent:45px;
+}
+
+#usableMoney{
+	width:100%;
+	height:20px;
+	float:left;
+	margin-top:6px;
+}
+.usableMoneyTxt{
+	position:absolute;
+	left:94px;
+	top:310px;
+	width:70px;
+	height:20px;
+	margin-top:8px;
+	float:left;
+	line-height:20px;
+}
+.PageBottom{
+	width:100%;
+	height:100px;
+}
+.haveMoney{
+	position:absolute;
+	left:160px; 
+	top:310px;
+	width:250px;
+	height:20px;
+	float:left; 
+	line-height:20px;
+	margin-top:8px; 
+	color:#ff0000; 
+	text-align:left;
+}
+.lendBtn{
+	position:absolute; 
+	left:100px; 
+	top:360px;
+	width:100px;
+	height:30px;
+	cursor:pointer;
+	font-size:10pt;
+	line-height:30px;
+}
+.lendBtnDisable{
+	width:100px;
+	height:30px;
+	color:FFFFFF;
+	background-color:#dfdfdf;
+	border:1px solid #9AA1AB; 
+	float:left;
+}
+.lendBtnEnable{
+	width:100px;
+	height:30px;
+	color:FFFFFF;
+	background-color:#4084D5;
+	border:1px solid #9AA1AB; 
+	float:left;
+}
+#shuru{
+	width:150px; 
+	height:27px;
+	border:1px solid;
+	border-color:#B3B3B3;
+	line-height:27px;
+	color:#999;
+}
+#interestRate{
+	position:absolute;
+	left:210px; 
+	top:365px; 
+	width:300px; 
+	height:30px;
+	line-height:30px;
+	text-align:center;
+	text-align:left;
+	z-index:-1;
+}
+#table1{
+	line-height:30px; 
+	margin:6px;
+}
+    
+
+/**价格下拉框**/
+.icon{
+	background: url('../images/price.png') no-repeat;
+	font-size:0;
+	line-height:0;
+}
+.icon-select{
+	width:20px;
+	height:7px;
+	float:right;
+	display:inline;
+	margin-top:13px;
+}
+.form-group{
+	float:left;
+	width:130px;
+	height:27px;
+	position: relative;
+	display: _inline;
+}
+.form-group-last{
+	margin-right:0;
+}
+.form-group-title{
+	overflow: hidden;
+}
+.form-group-title .icon-warn{
+	margin:2px;
+}
+.form-group-select{
+	background: #F8F8F8;
+	border:1px solid #ABB7C7;
+	height:27px;
+	line-height: 27px;
+	padding:0 5px;
+}
+.form-group-select .fl{
+	width:130px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: default;
+}
+.form-group-options{
+	z-index:10;
+	position:absolute;
+	top:28px;
+	left:0;
+	width:128px;
+	border:1px solid #9AA1AB;
+}
+.form-group-options .item {
+	display: block;
+	width:118px;
+	height:27px;
+	line-height: 27px;
+	overflow: hidden;
+	white-space: nowrap;
+}
+.form-group-options li{
+	
+	text-align:left;
+	text-indent:10px;
+	margin:0; 
+	padding:0; 
+	list-sytle:none;
+	cursor:pointer;
+	width:128px;
+}
+.form-group-options .item-active ,
+.form-group-options .item:hover{
+	background: #E8E8E8;
+}
+#default{float:left;}
+
+.hideHtml{display :none;}
+.showHtml{display: block;}
+
+/**委托成功页面**/
+
+.success{
+	width:100%; 
+	height:420px;
+}
+.pictureSuccess{
+	width:100%; 
+	height:120px; 
+	text-align:center; 
+	border-bottom:1px solid #EEEFEF;
+}
+.IMGSuccess{
+	width:67px;
+	height:51px;
+	position:absolute;
+	left:45%;
+	margin-top:30px;
+	background:url('../images/Bitmap.png') no-repeat;
+}
+.theadSuccess{
+	width:100%;
+	height:35px;
+	border-bottom:1px solid #EEEFEF; 
+	background: #F7F7F7;
+}
+#tableTheadSuccess td{
+	width:113px;
+	line-height:35px; 
+	text-align:center;
+	color:#999;
+}
+.tableSuccess{
+	width:100%;
+	height:35px;
+	border-bottom:1px solid #EEEFEF;
+}
+#tableSuccessMSG td{
+	width:113px;
+	line-height:35px; 
+	text-align:center;
+}
+.warmPrompt{
+	width:100%;
+	height:120px;
+	line-height:30px;
+	color:red;
+}
+.btnSuccess{
+	width:100px;
+	height:30px;
+	line-height:30px;
+	margin:0 0 0 44%;
+	text-align:center;
+}
+#buttonSuccess{
+	width:100px;
+	height: 30px;
+	background:#4084D5;
+	color:white;
+	cursor:pointer;
+}
+/**委托失败页面**/
+
+.failure{
+	width:100%;
+	height:426px;
+}
+.pictureFailure{
+	width:100%;
+	height:120px;
+	line-height:120px;
+	text-align:center;
+}
+.IMGFailure{
+	width:67px;
+	height:51px;
+	position:absolute;
+	left:45%;
+	margin-top:30px;
+	background: url('../images/faild.png') no-repeat;
+}
+.faildPrompt{
+	width:100%; 
+	height:170px;
+	text-align:center;
+	line-height:30px; 
+	color:red;
+}
+#returnUpPage{
+	color:#4084D5;
+	line-height:30px;
+}
+.btnFailure{
+	width:300px;
+	height:30px;
+	margin-left:260px;
+}
+.buttonFailure{
+	position:absolute;
+	left:320px;
+	top:320px;
+	width:100px;
+	height: 30px;
+	background:#4084D5;
+	color:white; 
+	text-align:center;
+	cursor:pointer;
+	line-height:30px;
+}
+/**委托确认提示框**/
+.BlockConfirm{
+	position:absolute;
+	left:190px;
+	top:100px;
+	width:300px;
+	height:230px;
+	border: solid 1px #4084D5;
+	background:#ffffff;
+}
+.BlockConfirmHead{
+	width:100%;
+	height:30px;
+	background:#4084D5;
+}
+.BlockConfirmTital{
+	width:100%;
+	height:30px;
+	line-height:30px;
+	color:#ffffff;
+	text-align:center;
+	font-size:10pt;
+}
+.BlockConfirmText{
+	float:left;
+	margin:auto;
+	width:100%;
+	height:30px;
+	line-height:30px;
+	font-size:10pt;
+	text-align:left;
+}
+.BlockConfirmInfo{
+	margin:30px 0 0 20px;
+	width:250px;
+	height:120px;
+	text-align:left;
+}
+.BlockConfirmStock{
+	margin-left:10px;
+	width:150px;
+	height:25px;
+	line-height:25px;
+	font-size:10pt;
+	float:left;
+}
+.BlockConfirmStockText{
+	width:60px;
+	height:25px;
+	line-height:25px;
+	font-size:10pt;
+	float:left;
+	color:#999999;
+}
+.BlockConfirmBtn{
+	width:200px;
+	height:30px;
+	line-height:30px;
+	margin:auto;
+}
+.BlockConfirmBtnCancel{
+	width:90px;
+	height:30px;
+	line-height:30px;
+	background:#999999;
+	float:left;
+	margin-left:20px;
+}
+.BlockConfirmBtnEnsure{
+	width:90px;
+	height:30px;
+	line-height:30px;
+	background:#4084D5;
+	color:#ffffff;
+	float:left;
+}
+
+
+
+
+
+
+

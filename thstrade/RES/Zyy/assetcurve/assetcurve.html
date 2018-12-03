@@ -1,0 +1,1682 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <title>资产曲线</title>
+	<!-[if gte IE8]>
+		<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">
+	<![endif]->
+	
+	<link rel="stylesheet" href="css/condition_main.css">
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="../comm/jquery.tinytooltip.css">
+	<script type="text/javascript" src="../comm/hxcomm.js"></script> 
+	<script type="text/javascript" src="../comm/echarts.min.js"></script>
+	<script type="text/javascript" src="js/assetcurve.js"></script>
+	<script type="text/javascript" src="../comm/jquery-1.6.1.js"></script> 
+	<script type="text/javascript" src="js/main_scroll.js"></script>
+	<script type="text/javascript" src="js/main_event.js"></script>
+	<script type="text/javascript" src="../comm/jquery.nicescroll.min.js"></script>
+	<script type="text/javascript" src="../comm/jquery.tinytooltip.js"></script> 
+</head>
+<body id="frame_container" onselectstart="return false" onclick="OnPageClickEvent()" onmouseleave="OnPageMouseLeave()">
+	<div id="guide" style="background:url(img/guide.png)">
+		<input type="button" class="img-iknow" style="background:url(img/iknow.png);background-repeat:no-repeat" onclick="OnClickPassGuide()" onmouseover="OnMouseOverPassGuide(this)">
+	</div>
+	<div id="hide-over-stock">
+		<p class="over-stock">对不起，由于您持仓数量超过20只，暂不支持本功能</p>
+	</div>
+	<div id="hide-all">
+		<p class="hide-all-text">很抱歉，该券商暂不支持资金曲线功能</p>
+	</div>
+	<div id="load-all">
+		<p class="load-all-text">数据正在加载，请稍后!</p>
+		<img src="img/loading.gif" class="all-loading"></img>
+	</div>
+	
+	<div id="vscroll_container" class="vscroll_container">
+		<div id="vscroll_ctrl_up" class="vscroll_ctrl vscroll_ctrl_up"></div>
+		<div id="vscroll" class="vscroll">
+			<div id="vbar" class="vbar"></div>
+		</div>
+		<div id="vscroll_ctrl_down" class="vscroll_ctrl vscroll_ctrl_down"></div>
+	</div>
+	
+	<div id="frame" style="background-color:#ffffff;position: relative">
+	
+		<div style="border-top:12px;overflow:hidden;height:6px" ></div>
+		
+		<div id="content">
+			<div id="content-top" style="height:206px"> 
+				<div id="zjzl">
+					<div id="zjzl-rect" class="rect">
+						<div id="zjzl-rect-head" class="rect-head">
+							<img src="img/zhzl.png" class="img-zhzl-nopointer"></img>
+							<p class="rect-head-text">账户总览</p>
+							<img src="img/help.png" class="img-zhzl tip-zjzl" title="账户总览显示的是您账户在查询时间点时的账户情况，以实际资产情况为准，仅供参考!"></img>
+						</div>
+						<div id="zjzl-username" class="zjzl-zjzh">申万宏源(原申万)-周*伦</div>
+						<div class="zjzl-table" id="div_zjzl" style="height:150px;">
+							<table class="table-head">
+								<tr>
+									<th id="zjzl-ccyk-text" class="zjzl-four-text">持仓盈亏:</th>
+									<th id="zjzl-ccyk" class="zjzl-text"></th>
+									
+								</tr>
+								<tr>
+									<th id="zjzl-dryk-text" class="zjzl-four-text">当日盈亏:</th>
+									<th id="zjzl-dryk" class="zjzl-text"></th>
+								</tr>
+								<tr>
+									<th id="zjzl-zsz-text" class="zjzl-four-text">股票市值:</th>
+									<th id="zjzl-zsz" class="zjzl-text"></th>
+								</tr>
+								<tr>
+									<th id="zjzl-zzc-text" class="zjzl-four-text">总资产:</th>
+									<th id="zjzl-zzc" class="zjzl-text"></th>
+								</tr>
+							</table>
+						</div>
+					</div>
+				</div>
+				
+				<!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+				<div id="hide-drzjqx">
+					<p class="hide-drzjqx-tip1">使用该功能需要开通小财神功能</p>
+					<p class="hide-drzjqx-tip2">请问是否需要开通？</p>
+					<button id="cancel" class="hide-drzjqx-cancel" onclick="OnCloseOpenXcs()">取消</button>
+					<button id="yes" class="hide-drzjqx-yes" onclick="OnOpenXcs()">开通</button>
+				</div>
+				<div id="hide-drzjqx-loading">
+					<p class="hide-drzjqx-lod">数据正在加载，请稍后!</p>
+					<img src="img/loading.gif" class="hide-drzjqx-loading"></img>
+					<button id="cancel" class="hide-drzjqx-return" onclick="OnCloseOpenXcs()">返回</button>
+				</div>
+				<div id="hide-drzjqx-loadfailed">
+					<p class="hide-drzjqx-ldf">当前数据加载失败!</p>
+					<button id="cancel" class="hide-retry-cancel" onclick="OnCloseOpenXcs()">取消</button>
+					<button id="yes" class="hide-retry-yes" onclick="OnReloadXcs()">重试</button>
+				</div>
+				<div id="hide-drzjqx-notsupport">
+					<p class="hide-drzjqx-notspt">暂不支持该功能!</p>
+					<button id="cancel" class="hide-drzjqx-return" onclick="OnCloseOpenXcs()">返回</button>
+				</div>
+				<div id="hide-drzjqx-connectfailed">
+					<p class="hide-drzjqx-tip3">当前数据获取失败,请重试!</p>
+					<button id="cancel" class="hide-retry-cancel" onclick="OnCloseOpenXcs()">取消</button>
+					<button id="yes" class="hide-retry-yes" onclick="OnReloadData()">重试</button>
+				</div>
+				<div id="hide-drzjqx-getfailed">
+					<p class="hide-drzjqx-tip3">当前数据获取失败,请重试!</p>
+					<button id="yes" class="hide-get-retry" onclick="OnReloadData()">重试</button>
+				</div>
+				<div id="drzjqx">
+					<div id="drzjqx-rect" class="rect">
+						<div id="drzjqx-rect-head" class="rect-head">
+							<img src="img/zjqx.png" class="img-zhzl-nopointer"></img>
+							<p id="drzjqx-head" class="rect-head-text">当日资金曲线</p>
+							<img src="img/help.png" class="img-zhzl tip-drzjqx" title="资金曲线显示的是您账户在一定时间段内的资金情况，以账户实际资金情况为准，仅供参考!"></img>
+						</div>
+						<div style="height:15px;width:100%;">
+							<div class="timeswitch">
+								<ul id="J_timeRange">
+									<li id="dr" class="cur" style="float:left;width:30px;margin-left:10px;border:1px solid #d0f7ff;font-size:11px;font-family:SimSun;">当日</li>
+									<li id="jsst" style="float:left;border:1px solid #d0f7ff;font-size:11px;font-family:SimSun;">近30日</li>
+								</ul>	
+							</div>
+							<p id="zjqx-username-line" class="drzjqx-text" style="position:absolute;right:190px;color:#ff6077;visibility:hidden;">一</p>
+							<p id="zjqx-username" class="drzjqx-text" style="position:absolute;right:150px;visibility:hidden;">周*伦</p>
+							<p id="zjqx-stock-line" class="drzjqx-text" style="position:absolute;right:115px;color:#66a6ff;visibility:hidden;">一</p>
+							<p id="zjqx-stock" class="drzjqx-text" style="position:absolute;right:60px;visibility:hidden;">上证指数</p>
+							<div id="nav">
+								<img id="nav-drop-btn" src="img/drop.png" style="position:absolute;right:40px;visibility:hidden;" class="drop"></img>
+								<div id="nav-drop">
+									<ul id="stockswitch">
+										<li id="szzs" onmouseenter="OnMouseHoverSwitch(this)" onmouseleave="OnMouseLeaveSwitch(this)">上证指数</li>
+										<li id="szcz" onmouseenter="OnMouseHoverSwitch(this)" onmouseleave="OnMouseLeaveSwitch(this)">深证成指</li>
+										<li id="cybz" onmouseenter="OnMouseHoverSwitch(this)" onmouseleave="OnMouseLeaveSwitch(this)">创业板指</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div id="main" style="height:162px;width:100%;" ></div>
+						<div id="refresh-curve" style="left:262px;top:68px;height:130px;width:346px;position:absolute;background-color:#ffffff;display:none;z-index:2;"></div>
+					</div>
+				</div>
+			</div>
+			
+			<div id="zjgp-view" style="background-color:#FFFFFF;width:100%"> 
+			<!-- 定义一个表格元素 --> 
+				<div id="zjgp-rect" class="rect">
+					<div id="zjgp-rect-head" class="rect-head">
+						<img src="img/zjgp.png" class="img-zhzl-nopointer"></img>
+						<p class="rect-head-text">资金股票</p>
+					</div>
+					<div class="zjgp-table" id="div_zjgp" style="background-color:#ffffff">
+						<table class="table-head">
+							<colgroup>
+								<col width="10%">
+								<col width="9%">
+								<col width="9%">
+								<col width="9%">
+								<col width="9%">
+								<col width="10%">
+								<col width="10%">
+								<col width="2%">
+								<col width="10%">
+								<col width="12%">
+								<col width="3%">
+							</colgroup>
+							<thead>
+							<tr>
+									<th class="table-head-none" style="text-align:center">代码&nbsp</th>
+									<th class="table-head-none" style="text-align:left">名称</th>
+									<th class="table-head-none" style="text-align:right">当日涨幅&nbsp;</th>
+									<th class="table-head-none" style="text-align:right">现价&nbsp;&nbsp;</th>
+									<th class="table-head-none" style="text-align:right">成本价</th>
+									<th class="table-head-none" style="text-align:right">实际数量</th>
+									<th class="table-head-none" style="text-align:right">当日盈亏</th>
+									<th class="table-head-none" style="text-align:right"></th>
+									<th class="table-head-none" style="text-align:right">总盈亏</th>
+									<th class="table-head-none" style="text-align:right">市值</th>
+									<th class="table-head-none" style="text-align:right"></th>
+							</tr>
+							</thead>
+						</table>
+						<div id="table-content">
+							<!--<p class="noaccount-tip">请添加您的账户</p>-->
+							<table class="table-body">
+								<colgroup>
+									<col width="10%">
+									<col width="9%">
+									<col width="9%">
+									<col width="9%">
+									<col width="9%">
+									<col width="10%">
+									<col width="10%">
+									<col width="2%">
+									<col width="10%">
+									<col width="12%">
+									<col width="3%">
+								</colgroup>
+								<tbody id="zjgp">
+								</tbody>
+							</table>
+						</div> 
+					</div> 
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script type="text/javascript">  
+        // 基于准备好的dom，初始化echarts图表
+        var g_myChart = echarts.init(document.getElementById('main')); 
+		var g_xAxisValue = [];
+        
+        option = {
+			animation:false,
+			grid:{
+				x:75,
+				y:10,
+				x2:75,
+				y2:30,
+				borderWidth:0
+			},
+			tooltip : {
+				trigger: 'axis',
+				axisPointer:{
+					snap:true,
+					type:'line',
+					axis:'x'
+				},
+				formatter:function(params, ticket, callback)
+				{
+					var res = '';
+					
+					if(params[0])
+					{
+						res += params[0].name + '<br/>';
+						res += '<span style="display:inline-block;margin-right:5px;width:12px;height:12px;background-color:#ff6077;font-size:0"></span>'
+						res += params[0].seriesName + ' : ' + parseFloat(params[0].value).toFixed(2) + '%' + '<br/>';
+					}
+					
+					if(params[1])
+					{
+						res += '<span style="display:inline-block;margin-right:5px;width:12px;height:12px;background-color:#66a6ff;font-size:0"></span>'
+						res += params[1].seriesName + ' : ' + params[1].value + '%' +'<br/>';
+					}
+					
+					return res;
+				}
+			},
+			toolbox: {
+				show : false
+			},
+			calculable : true,
+			xAxis : [
+				{
+					type : 'category',
+					data : [],
+					
+					axisLabel:{
+						interval:0,
+						textStyle:{
+							color: '#777777',
+							fontSize:'13',
+							fontFamily:'SimSun'
+						}
+					},
+					axisTick : {
+						show: false
+					},
+					axisLine : {
+						show: false,
+						type : 'dashed'
+					},
+					splitLine: {
+						show: false
+					}
+				}
+			],
+			yAxis : [
+				{
+					show : true,
+					type : 'value',
+					scale: true,
+					axisLabel : {
+						formatter: function(value, index){
+							return value.toFixed(2) + '%'
+						},
+						textStyle:{
+							color: function(value){
+									return value > 0 ? "#e82323" : "#5767E3";
+							},
+							fontSize:'13',
+							fontFamily:'SimSun'
+						}
+					},
+					splitLine: {
+						show: false,
+						lineStyle : {
+							type : 'dashed'
+						}
+					},
+					axisLine : {
+						show: false,
+						type : 'dashed'
+					},
+					axisTick:{
+						show : false
+					}
+				},
+				{
+					type : 'value',
+					scale: true,
+					axisLabel : {
+						formatter: function(value, index){
+							if(parseFloat(value) >= 0)
+							{
+								return ' ' + value.toFixed(2) + '%'
+							}
+							return value.toFixed(2) + '%'
+						},
+						textStyle:{
+							color: function(value){
+									return value >= 0 ? "#e82323" : "#5767E3";
+							},
+							fontSize:'13',
+							fontFamily:'SimSun'
+						}
+					},
+					splitLine: {
+						show: false,
+						lineStyle : {
+							type : 'dashed'
+						}
+					},
+					axisLine : {
+						show: false,
+						type : 'dashed'
+					},
+					axisTick:{
+						show : false
+					}
+				}
+			],
+			series : [
+				{
+					name:'---',
+					type:'line',
+					yAxisIndex: 1,
+					showSymbol:false,
+					hoverAnimation:false,
+					itemStyle:{
+						normal:{
+							lineStyle:{
+								color:'#ff6077',
+								width:1
+							}
+						}
+					},
+					data:[]
+				},
+				{
+					name:'---',
+					type:'line',
+					yAxisIndex: 0,
+					showSymbol:false,
+					hoverAnimation:false,
+					itemStyle:{
+						normal:{
+							lineStyle:{
+								color:'#66a6ff',
+								width:1
+							}
+						}
+					},
+					data:[]
+				}
+			]
+		};
+
+	var g_dlgSize = 'nType=0\nwidth=680\nheight=454\n';   // 页面大小
+	{
+		if(IsIE6Expor())
+		{
+			g_dlgSize  = 'nType=0\nwidth=680\nheight=470\n';
+			document.getElementById('frame').style.height = '440px';
+			document.getElementById('guide').style.height = '440px';
+			document.getElementById('guide').style.background = 'url(img/guide_ie6.png)';
+			
+		}
+	}
+	var g_curUserInfo = "";                               // 当前用户信息
+	var g_qsid = "";                                      // 券商ID
+	var g_chengjiaoObj;                                   // 成交表
+	var g_xcsStatus;                                      // 小财神状态
+	var g_userid;                                         // 同花顺id
+	var g_zjzh;                                           // 资金账号
+	var g_zijinObj;                                       // 资金表
+	var g_jsstSzzs = [];                                  // 近30天上证指数
+	var g_jsstCybzs = [];                                 // 近30天创业板指数
+	var g_jsstSzzs2 = [];                                 // 近30天深圳指数
+	var g_jsstDate = [];                                  // 近30天日期
+	var g_jsstZjqx = [];                                  // 近30天资金曲线
+	var g_curLi;                                          // 当前选中周期
+	var g_strCodeList='';                                 // 券商code列表
+	var g_arrSh = [];                                     // 当日上证指数
+	var g_arrSz = [];                                     // 当日深圳指数
+	var g_arrGem = [];                                    // 当日创业板指数
+	var g_arrHold = [];                                   // 当日资金曲线数据
+	var g_curSelCode = '';                                // 当前选中行代码
+	var g_curStockLi;                                     // 当前选中的指数
+	var g_strUserInfo;                                    // 当前券商资金名
+	var g_strStockName;                                   // 当前指数名
+	var g_bVisible;                                       // 窗口是否可见
+	var g_timerId;                                        // 定时器id
+	var g_bFirst;                                         // 是否第一次调用fnStart
+	var g_jsstDataLen;                                    // 近30天日期长度
+	var g_strUserName;                                    // 用户名
+	var g_bNotSupport;                                    // 是否不支持资金曲线
+	var g_animateTimerId;                                 // 动态效果的定时器
+	var g_ccObj;                                          // 页面持仓数据对象
+	var g_dateStart = 0;                                  // 显示开始时间,用于日志统计
+	var g_strInterval = '';                               // 单次打开时长list,用于日志统计
+	var g_dateCount = 0;                                  // 显示总计时长,用于日志统计
+	var g_nStockCount = 0;                                // 用户持仓个数
+	var g_pkgVer = '2.0.5';                               // pkg版本号
+	var g_bSendLostPoint;                                 // 当日资产数据断点时，是否上传日志
+	var g_bDataReady;                                     // 银行流水，成交数据是否准备好
+	var g_nWheelBeginPos = -1;                            // 滚动初始位置
+	var g_fAssetPre = 0;                                  // 昨收总资产
+	var g_strMinData = '';                                // 行情原始数据
+	var g_fJsstPre = 0;                                   // 近30天资金base资产
+	var g_bScrolled = false;
+	
+	// 资产曲线页面入口函数，下单调用
+	function fnStart(str)
+	{
+		fnFunction('set_caption', '资金曲线');
+		
+		g_userid = fnFunction('get_userid');
+
+		g_curLi = 'dr';
+		g_curStockLi = 'szzs';
+		g_strStockName = '上证指数';
+		g_strCodeList = '';
+		g_jsstDataLen = 0;
+		g_ccObj = '';
+		g_bFirst = 1;
+		g_bSendLostPoint = 1;
+		g_bDataReady = 0;
+		g_strMinData = '';
+		
+		var array_param = new Array();
+		
+		array_param = str.split('|');
+		if (array_param.length < 4) { 
+			return; 
+		}
+		
+		if(g_curUserInfo == '')
+		{
+			g_curUserInfo = array_param[1];
+			
+			fnFunction('chg_dlgsize', g_dlgSize);
+			fnFunction('show_dlg');
+		}
+		else if(g_curUserInfo != array_param[1])
+		{
+			if(g_bVisible == '1')
+			{
+				CalTickCount();
+			}
+			
+			if(g_dateCount > 0)
+			{
+				if(g_bNotSupport != '1')
+				{
+					SendUserAction();
+				}
+			}
+			
+			g_curUserInfo = array_param[1];
+		}
+
+		g_zjzh = fnFunction('get_zjzh_ex', g_curUserInfo);
+		
+		var strUserInfo = fnFunction('get_user_info', 'user=' + g_curUserInfo);
+		var mapString = SetMapString(strUserInfo);
+		
+		if(mapString['qsname'])
+		{
+			g_strUserInfo = mapString['qsname'];
+		}
+		
+		if(mapString['gdxm'])
+		{
+			g_strUserInfo += '-' + mapString['gdxm'];
+			g_strUserName = mapString['gdxm'];
+		}
+		
+		g_htmlReqStatus = array_param[2];
+		
+		var array_user = new Array();
+		array_user = g_curUserInfo.split('_');
+		g_qsid = array_user[0];
+		
+		initData();
+		g_nStockCount = 0;
+		
+		g_bNotSupport = fnFunction('get_authorization', 'func_id=10\nuser=' +g_curUserInfo);
+		
+		var strGuided = '';
+		var guideObj = {};
+		guideObj['section'] = 'asset_set';
+		guideObj['key'] = g_userid;
+		guideObj['default'] = '0';
+		guideObj['file_path'] = 'Res/zyy/zyy.ini';
+		
+		strGuided = fnFunction('read_cfg',JSON.stringify(guideObj));
+		
+		if(strGuided == '1')
+		{
+			if(g_bNotSupport == '1')
+			{
+				if(!IsIE6Expor() && !bUseCefBrowser)
+				{
+					document.getElementById('frame').style.top = '0px';
+					ResizeVBar();
+				}
+			
+				document.getElementById('hide-all').style.display='block';
+				return;
+			}
+		
+			document.getElementById("load-all").style.display = 'block';
+		
+			setTimeout('fnAskData()', 0);
+		}
+		else
+		{
+			document.getElementById('guide').style.display = 'block';
+			if(!IsIE6Expor() && !bUseCefBrowser)
+			{
+				InitScroll();
+			}
+			return;
+		}
+		
+		if(!IsIE6Expor() && !bUseCefBrowser)
+		{
+			document.getElementById('frame').style.top = '0px';
+			InitScroll();
+			ResizeVBar();
+		}
+	}
+	
+	function SetMapString(strParam)
+	{
+		var objRet = new Object();
+		
+		var arrStr =  strParam.split('\n');
+		
+		for(index in arrStr)
+		{
+			var arrSubStr = arrStr[index].split('=');
+			
+			if(arrSubStr.length == 2)
+			{
+				objRet[arrSubStr[0]] = arrSubStr[1];
+			}
+		}
+		
+		return objRet;
+	}
+	
+	// 初始化数据，清空上次残留的页面数据
+	function initData()
+	{
+		if(bUseCefBrowser)
+		{
+			document.getElementById('vscroll_container').style.display = 'none';
+			document.getElementById('frame_container').style.overflowY = 'auto';
+			document.getElementById('frame_container').style.height = '430px';
+		}
+	
+		initTimeXAxis();
+		initDrzjqx();
+	
+		// 为echarts对象加载数据
+		g_myChart.clear();
+		g_myChart.setOption(option); 
+		window.onresize = g_myChart.resize;
+		
+		g_dateStart = new Date();
+		g_strInterval = '';
+		g_dateCount = 0;
+		
+		$('#zjgp').html('');
+		
+		showAllElement(false);
+		
+		document.getElementById("zjzl-ccyk").innerHTML = '0.00';
+		document.getElementById("zjzl-dryk").innerHTML = '0.00';
+		document.getElementById("zjzl-zsz").innerHTML = '0.00';
+		document.getElementById("zjzl-zzc").innerHTML = '0.00';
+		
+		document.getElementById('zjqx-stock').innerHTML = g_strStockName;
+		document.getElementById("zjzl-username").innerHTML = g_strUserInfo;
+		document.getElementById("zjqx-username").innerHTML = g_strUserName;
+		
+		document.getElementById("zjzl-ccyk").style.color = '#515050';
+		document.getElementById("zjzl-dryk").style.color = '#515050';
+		document.getElementById("zjzl-zsz").style.color = '#515050';
+		document.getElementById("zjzl-zzc").style.color = '#515050';
+		
+		g_jsstSzzs.splice(0, g_jsstSzzs.length);
+		g_jsstSzzs2.splice(0, g_jsstSzzs2.length);
+		g_jsstCybzs.splice(0, g_jsstCybzs.length);
+		g_jsstDate.splice(0, g_jsstDate.length);
+		g_jsstZjqx.splice(0, g_jsstZjqx.length);
+		
+		g_arrSh.splice(0, g_arrSh.length);
+		g_arrSz.splice(0, g_arrSz.length);
+		g_arrGem.splice(0, g_arrGem.length);
+		g_arrHold.splice(0, g_arrHold.length);
+		
+		document.getElementById("hide-drzjqx").style.display="none";
+		document.getElementById("hide-drzjqx-connectfailed").style.display="none";
+		document.getElementById("hide-drzjqx-loadfailed").style.display="none";
+		document.getElementById("hide-drzjqx-notsupport").style.display="none";
+		document.getElementById("hide-drzjqx-loading").style.display="none";
+		document.getElementById('hide-all').style.display='none';
+		document.getElementById("hide-over-stock").style.display = 'none';
+	
+		$('#J_timeRange li').removeClass('cur');
+		$('#dr').addClass('cur');
+		
+		clearInterval(g_timerId);
+	}
+	
+	// fnstart结束之后，开始请求资金，持仓，成交表数据
+	function fnAskData()
+	{
+		fn_cxYhls();
+		setTimeout('fnCheckAllLoaded()', 5000);
+	}
+	
+	function fnCheckAllLoaded()
+	{
+		if(document.getElementById("load-all").style.display == 'block')
+		{
+			SendLogToServer('DT_CX_CC', '-1', '页面加载超时 g_bDataReady:' + g_bDataReady, '');
+		}
+	}
+	
+	// 设置定时器，30秒请求一次当日资金数据
+	function fnRefreshDrZJQX()
+	{
+		clearInterval(g_timerId);
+		g_timerId = setInterval('fnDrawDrZJQX()', 30000);
+	}
+	
+	var sh = "1A0001";
+	var sz = "399001";
+	var gem = "399006";
+	
+	// 刷新资金曲线数据
+	function fnDrawDrZJQX(bSendRule)
+	{
+		if(g_bNotSupport == '1' || g_nStockCount > 20)
+		{
+			return;
+		}
+	
+		if(g_curLi == 'dr')
+		{
+			var strRule = '';
+			if(bSendRule)
+			{
+				var ruleObj = {};
+				ruleObj['bank2broker'] = '银行转证券|银行转证|银行转存|';
+				ruleObj['broker2bank'] = '证券转银行|证券转银|银行转取|';
+				ruleObj['banktransfer'] = '';
+				ruleObj['banktime'] = '25|2140|340|2140|13|2140|100|2140|51|2140|41|2140|110|2140|552|2140|29|2140';
+				ruleObj['bankasset'] = '';
+				
+				strRule = 'rule=' + JSON.stringify(ruleObj) + ';';
+			}
+		
+			var strParam = 'user=' + g_curUserInfo + ';codelist=' + '399006|1a0001|399001|' + g_strCodeList + ';' + strRule;
+			var strRet = fnFunction('ask_hq_minute_data', strParam);
+			
+			if(strRet.length > 0)
+			{
+				g_arrSh = [];
+				g_arrSz = [];
+				g_arrGem = [];
+				g_arrHold = [];
+				
+				var strPreSh = '';
+				var strPreSz = '';
+				var strPreGem = '';
+				
+				var bLostSh = false;
+				var bLostSz = false;
+				var bLostGem = false;
+				var bLostHold = false;
+			
+				var strToObj = new Function('return' + strRet)();
+				
+				var tmpData;
+				
+				strPreSh = strToObj.extra['1A0001_pre'];
+				strPreSz = strToObj.extra['399001_pre'];
+				strPreGem = strToObj.extra['399006_pre'];
+				
+				g_fAssetPre = strToObj.extra['assetpre'];
+				
+				var nStartKey = 570;
+				
+				var shObj = strToObj[sh];
+				if(shObj)
+				{
+					for(var key in shObj)
+					{
+						if(nStartKey != parseInt(key))
+						{
+							bLostSh = true;
+						}
+						
+						if(nStartKey == 690)
+						{
+							nStartKey = 780;
+						}
+						else
+						{
+							nStartKey ++;
+						}
+					
+						var fBasePrice = strPreSh ? strPreSh : shObj['570'];
+						fBasePrice = parseFloat(fBasePrice).toFixed(2);
+						
+						tmpData = (parseFloat(shObj[key]) - fBasePrice) / fBasePrice;
+						g_arrSh.push((tmpData * 100).toFixed(2));
+					}
+				}
+				
+				nStartKey = 570;
+				
+				var szObj = strToObj[sz];
+				if(szObj)
+				{
+					for(var key in szObj)
+					{
+						if(nStartKey != parseInt(key))
+						{
+							bLostSz = true;
+						}
+						
+						if(nStartKey == 690)
+						{
+							nStartKey = 780;
+						}
+						else
+						{
+							nStartKey ++;
+						}
+					
+						var fBasePrice = strPreSz ? strPreSz : szObj['570'];
+						fBasePrice = parseFloat(fBasePrice).toFixed(2);
+					
+						tmpData = (parseFloat(szObj[key]) - fBasePrice) / fBasePrice;
+						g_arrSz.push((tmpData * 100).toFixed(2));
+					}
+				}
+				
+				nStartKey = 570;
+				
+				var gemObj = strToObj[gem];
+				if(gemObj)
+				{
+					for(var key in gemObj)
+					{
+						if(nStartKey != parseInt(key))
+						{
+							bLostGem = true;
+						}
+						
+						if(nStartKey == 690)
+						{
+							nStartKey = 780;
+						}
+						else
+						{
+							nStartKey ++;
+						}
+					
+						var fBasePrice = strPreGem ? strPreGem : gemObj['570'];
+						fBasePrice = parseFloat(fBasePrice).toFixed(2);
+						
+						tmpData = (parseFloat(gemObj[key]) - fBasePrice) / fBasePrice;
+						g_arrGem.push((tmpData * 100).toFixed(2));
+					}
+				}
+				
+				nStartKey = 570;
+				
+				if(strToObj.holdings)
+				{
+					for(var key in strToObj.holdings)
+					{
+					
+						if(nStartKey != parseInt(key))
+						{
+							bLostHold = true;
+						}
+						
+						if(nStartKey == 690)
+						{
+							nStartKey = 780;
+						}
+						else
+						{
+							nStartKey ++;
+						}
+						
+						g_arrHold.push(parseFloat(strToObj.holdings[key]));
+					}
+				}
+				
+				if(g_bSendLostPoint == 1)
+				{
+					if(bLostSh)
+					{
+						SendLogToServer('DT_CX_MINDATA', '-1', '当日上证指数曲线点不连续', '');
+					}
+					
+					if(bLostSz)
+					{
+						SendLogToServer('DT_CX_MINDATA', '-1', '当日深证指数曲线点不连续', '');
+					}
+					
+					if(bLostGem)
+					{
+						SendLogToServer('DT_CX_MINDATA', '-1', '当日创业板指曲线点不连续', '');
+					}
+					
+					if(bLostHold)
+					{
+						SendLogToServer('DT_CX_MINDATA', '-1', '当日资金曲线点不连续', '');
+					}
+					
+					if(bLostSh || bLostSz || bLostGem || bLostHold)
+					{
+						var strCBS = '||d_hqdt=' + fun_hqdata_replace(g_strMinData);
+						strCBS = fnFunction('encode_base64ex', strCBS);
+						
+						SendLogToServer('DT_CX_MINDATA', '-1', '曲线点不连续,上传行情原始数据', strCBS, true);
+						g_bSendLostPoint = 0;
+					}
+				}
+			}
+			
+			fnRefreshChart();
+		}
+	}
+	
+	// 请求返回的数据统一处理
+	function fnNotify(strType, str)
+	{
+		if(g_bNotSupport == '1' || g_curUserInfo == '' || document.getElementById('guide').style.display == 'block' 
+			&& (strType != 'visible' && strType != 'operator'))
+		{
+			return;
+		}
+		
+		if(g_nStockCount > 20)
+		{
+			return;
+		}
+		
+		var strDes = fun_str_replace(str);
+		var strToObj;
+		try
+		{
+			strToObj = new Function('return' + strDes)();
+		}
+		catch(err)
+		{
+			var strCBS = 'd_dttype=' + strType + '|' + 'd_jsondt=' + strDes;
+			strCBS = fnFunction('encode_base64ex', strCBS);
+				
+			SendLogToServer('DT_JSON_PARSE', '-1', 'json数据解析失败', strCBS, true);
+			
+			return;
+		}
+	
+		if(strType == 'xcs')
+		{
+			if(strToObj.state)
+			{
+				var nStatus = parseInt(strToObj.state);
+				HandleXcsStatus(nStatus);
+			}
+		}
+		else if(strType == 'minData')
+		{
+			if(strToObj.src)
+			{
+				g_strMinData = strToObj.src;
+			}
+			
+			if(strToObj.errno)
+			{
+				clearAllHideView();
+				if(strToObj.errno == '0')
+				{
+					fnDrawDrZJQX();
+					fnRefreshDrZJQX();
+				}
+				else
+				{
+					var strCBS = '||d_hqdt=' + fun_hqdata_replace(g_strMinData);
+					strCBS = fnFunction('encode_base64ex', strCBS);
+				
+					SendLogToServer('DT_CX_MINDATA', '-1', '查询minData失败', strCBS, true);
+					
+					document.getElementById("hide-drzjqx-getfailed").style.display="block";
+					clearInterval(g_timerId);
+				}
+			}
+		}
+		else if(strType == 'visible')
+		{
+			var bVisible;
+			
+			if(strToObj.visible)
+			{
+				bVisible = strToObj.visible;
+			}
+			
+			if(bVisible == '1')
+			{
+				g_dateStart = new Date();
+				startanimateCurve();
+			}
+			else
+			{
+				if(g_bVisible == '1')
+				{
+					CalTickCount();
+				}
+			}
+			
+			g_bVisible = bVisible;
+		}
+		else if(strType == 'operator')
+		{
+			if(strToObj.type)
+			{
+				if(strToObj.type == 'exit')
+				{
+					clearInterval(g_timerId);
+
+					if(g_bVisible == '1')
+					{
+						CalTickCount();
+					}
+				
+					if(g_dateCount > 0)
+					{
+						if(g_bNotSupport != '1')
+						{
+							SendUserAction();
+						}
+					}
+					
+				}
+				else if(strToObj.type == 'relogin')
+				{
+					clearInterval(g_timerId);
+				
+					if(g_bVisible == '1')
+					{
+						CalTickCount()
+					}
+					
+					if(g_dateCount > 0)
+					{
+						if(g_bNotSupport != '1')
+						{
+							SendUserAction();
+						}
+					}
+					
+					g_curUserInfo = '';
+				}
+				else if(strToObj.type == 'clicked')
+				{
+					var obj = document.getElementById('nav-drop')
+					obj.style.display = 'none';
+				}
+			}
+		}
+		else
+		{
+			fun_refresh_by_data(strToObj, strType);
+		}
+		
+	}
+	
+	function OnClickPassGuide()
+	{
+		var guideObj = {};
+		guideObj['section'] = 'asset_set';
+		guideObj['key'] = g_userid;
+		guideObj['value'] = '1';
+		guideObj['file_path'] = 'Res/zyy/zyy.ini';
+		
+		fnFunction('write_cfg',JSON.stringify(guideObj));
+		
+		document.getElementById('guide').style.display = 'none';
+		
+		if(g_bNotSupport == '1')
+		{
+			if(!IsIE6Expor() && !bUseCefBrowser)
+			{
+				document.getElementById('frame').style.top = '0px';
+				ResizeVBar();
+			}
+		
+			document.getElementById('hide-all').style.display='block';
+			return;
+		}
+		
+		document.getElementById("load-all").style.display = 'block';
+			
+		setTimeout('fnAskData()', 0);
+	}
+	
+	function OnMouseOverPassGuide(obj)
+	{
+		if(!obj)
+		{
+			return;
+		}
+		
+		obj.style.cursor = 'pointer';
+	}
+	
+	// 刷新资金曲线图
+	function fnRefreshChart()
+	{
+		var fMaxStockData, fMinStockData;
+		var fMaxZjqxData, fMinZjqxData;
+		
+		var fMaxPrice;
+		
+		if(g_curLi == 'jsst')
+		{
+			var stockData;
+			if(g_curStockLi == 'szzs')
+			{
+				stockData = g_jsstSzzs;
+			}
+			else if(g_curStockLi == 'szcz')
+			{
+				stockData = g_jsstSzzs2;
+			}
+			else if(g_curStockLi == 'cybz')
+			{
+				stockData = g_jsstCybzs;
+			}
+			
+			fMaxStockData = parseFloat(Math.max.apply(null, stockData));
+			fMinStockData = parseFloat(Math.min.apply(null, stockData));
+			
+			fMaxZjqxData = parseFloat(Math.max.apply(null, g_jsstZjqx));
+			fMinZjqxData = parseFloat(Math.min.apply(null, g_jsstZjqx));
+			
+			if(typeof(g_fAssetPre) != 'undefined')
+			{
+				fMaxPrice = g_fJsstPre * (1 + fMaxZjqxData * 0.01);
+			}
+			
+			fMaxStockData = fMaxStockData > fMaxZjqxData ? fMaxStockData : fMaxZjqxData;
+			fMinStockData = fMinStockData < fMinZjqxData ? fMinStockData : fMinZjqxData;
+				
+			var fStockInterval = (fMaxStockData - fMinStockData)/4;
+			fStockInterval = fStockInterval * 1.2;
+			
+			if(fStockInterval == 0)
+			{
+				var fTmp = fMaxStockData/4;
+				if(fTmp > -0.01 && fTmp < 0.01)
+				{
+					fStockInterval = 0.01;
+				}
+				else 
+				{
+					fStockInterval = Math.abs(fTmp);
+				}
+			}
+			else if(fStockInterval < 0.01)
+			{
+				fStockInterval = 0.01;
+			}
+			
+			fStockInterval = parseFloat(fStockInterval.toFixed(2));
+			
+			var fStockAvg = (fMaxStockData + fMinStockData)/2;
+			fStockAvg = parseFloat(fStockAvg.toFixed(2));
+			
+			fMaxStockData = fStockAvg + fStockInterval * 2;
+			fMinStockData = fStockAvg - fStockInterval * 2;
+		
+			if(g_jsstDate.length > 0)
+			{
+				if(typeof(g_fAssetPre) != 'undefined')
+				{
+					g_myChart.setOption({
+					tooltip : {
+						formatter:function(params, ticket, callback)
+						{
+							var res = '';
+							
+							var strCurPrice = g_fJsstPre * (1 + params[0].value * 0.01);
+							
+							if(fMaxPrice >= 10000 && fMaxPrice < 100000000)
+							{
+								strCurPrice = strCurPrice.toFixed(2);
+								strCurPrice = (strCurPrice / 10000).toFixed(2);
+								
+								var fUnitPrice = fMaxPrice.toFixed(2);
+								fUnitPrice = (fUnitPrice / 10000).toFixed(2);
+								
+								if(fUnitPrice >= 10000)
+									strCurPrice = (strCurPrice/10000).toFixed(2)  + '亿';
+								else
+									strCurPrice = parseFloat(strCurPrice).toFixed(2) + '万';
+							}
+							else if(fMaxPrice >= 100000000)
+							{
+								strCurPrice = (strCurPrice / 100000000).toFixed(2) + '亿';
+							}
+							else
+							{
+								strCurPrice = strCurPrice.toFixed(2);
+							}
+							
+							if(params[0])
+							{
+								res += params[0].name + '<br/>';
+								res += '<span style="display:inline-block;margin-right:5px;width:12px;height:12px;background-color:#ff6077;font-size:0"></span>'
+								res += params[0].seriesName + ' : ' + strCurPrice + ' ' + parseFloat(params[0].value).toFixed(2) + '%' + '<br/>';
+							}
+							
+							if(params[1])
+							{
+								res += '<span style="display:inline-block;margin-right:5px;width:12px;height:12px;background-color:#66a6ff;font-size:0"></span>'
+								res += params[1].seriesName + ' : ' + params[1].value + '%' +'<br/>';
+							}
+							
+							return res;
+						}
+					},
+					xAxis : {
+						data : g_jsstDate,
+						axisLabel:{
+							interval:0,
+							formatter:function(value,index){
+								if(index == 0 || index == parseInt(g_jsstDataLen / 4) || index == parseInt(g_jsstDataLen * 2 / 4) || index == parseInt(g_jsstDataLen * 3 / 4) || index == g_jsstDataLen-1)
+								{
+									var strVal = value.toString();
+									value = strVal.substring(4, 6) + '.' + strVal.substring(6, 8);
+									return value;
+								}
+							}
+						}
+					},
+					yAxis : [
+						{
+							max:fMaxStockData,
+							min:fMinStockData,
+							interval:fStockInterval
+						},
+						{
+							max:fMaxStockData,
+							min:fMinStockData,
+							interval:fStockInterval,
+							axisLabel : {
+								formatter: function(value, index){
+								
+									var strCurPrice = g_fJsstPre * (1 + value * 0.01);
+									
+									var strUnit = '';
+									
+									if(g_fJsstPre == 0)
+									{
+										strCurPrice = value * 0.5;
+									}
+									
+									if(fMaxPrice >= 10000 && fMaxPrice < 100000000)
+									{
+										strCurPrice = strCurPrice.toFixed(2);
+										strCurPrice = (strCurPrice / 10000).toFixed(2);
+										
+										var fUnitPrice = fMaxPrice.toFixed(2);
+										fUnitPrice = (fUnitPrice / 10000).toFixed(2);
+										
+										if(fUnitPrice >= 10000)
+										{
+											strCurPrice = (strCurPrice/10000).toFixed(2);
+											strUnit = '亿';
+										}
+										else
+										{
+											strCurPrice = strCurPrice;
+											strUnit = '万';
+										}
+									}
+									else if(fMaxPrice >= 100000000)
+									{
+										strCurPrice = (strCurPrice / 100000000).toFixed(2);
+										strUnit = '亿';
+									}
+									else
+									{
+										strCurPrice = strCurPrice.toFixed(2);
+									}
+									
+									if(strCurPrice >= 0)
+									{
+										strCurPrice = ' ' + strCurPrice;
+									}
+									
+									strCurPrice += strUnit;
+								
+									return strCurPrice;
+								},
+								textStyle:{
+									color: function(value){
+										var strCurPrice = g_fJsstPre * (1 + value * 0.01);
+									
+										if(g_fJsstPre == 0)
+										{
+											strCurPrice = value * 0.5;
+										}
+										
+										return strCurPrice >= 0 ? "#e82323" : "#5767E3";
+									},
+									fontSize:'13',
+									fontFamily:'SimSun'
+								}
+							}
+						}
+					],
+					series : [{
+						name : g_strUserName,
+						data : g_jsstZjqx,
+						yAxisIndex: 0
+					},
+					{
+						name : g_strStockName,
+						data : stockData,
+						yAxisIndex: 0
+					}]
+					});
+				}
+				else
+				{
+					g_myChart.setOption({
+					xAxis : {
+						data : g_jsstDate,
+						axisLabel:{
+							interval:0,
+							formatter:function(value,index){
+								if(index == 0 || index == parseInt(g_jsstDataLen / 4) || index == parseInt(g_jsstDataLen * 2 / 4) || index == parseInt(g_jsstDataLen * 3 / 4) || index == g_jsstDataLen-1)
+								{
+									var strVal = value.toString();
+									value = strVal.substring(4, 6) + '.' + strVal.substring(6, 8);
+									return value;
+								}
+							}
+						}
+					},
+					yAxis : [
+						{
+							max:fMaxStockData,
+							min:fMinStockData,
+							interval:fStockInterval
+						},
+						{
+							max:fMaxStockData,
+							min:fMinStockData,
+							interval:fStockInterval
+						}
+					],
+					series : [{
+						name : g_strUserName,
+						data : g_jsstZjqx,
+						yAxisIndex: 0
+					},
+					{
+						name : g_strStockName,
+						data : stockData,
+						yAxisIndex: 0
+					}]
+					});
+				}
+			}
+		}
+		else if(g_curLi == 'dr')
+		{
+			var stockData;
+			if(g_curStockLi == 'szzs')
+			{
+				stockData = g_arrSh;
+			}
+			else if(g_curStockLi == 'szcz')
+			{
+				stockData = g_arrSz;
+			}
+			else if(g_curStockLi == 'cybz')
+			{
+				stockData = g_arrGem;
+			}
+			
+			fMaxStockData = parseFloat(Math.max.apply(null, stockData));
+			fMinStockData = parseFloat(Math.min.apply(null, stockData));
+			
+			fMaxZjqxData = parseFloat(Math.max.apply(null, g_arrHold));
+			fMinZjqxData = parseFloat(Math.min.apply(null, g_arrHold));
+			
+			if(typeof(g_fAssetPre) != 'undefined')
+			{
+				fMaxPrice = g_fAssetPre * (1 + fMaxZjqxData * 0.01);
+			}
+			
+			fMaxStockData = fMaxStockData > fMaxZjqxData ? fMaxStockData : fMaxZjqxData;
+			fMinStockData = fMinStockData < fMinZjqxData ? fMinStockData : fMinZjqxData;
+				
+			var fStockInterval = (fMaxStockData - fMinStockData)/4;
+			fStockInterval = fStockInterval * 1.2;
+			
+			if(fStockInterval == 0)
+			{
+				var fTmp = fMaxStockData/4;
+				if(fTmp > -0.01 && fTmp < 0.01)
+				{
+					fStockInterval = 0.01;
+				}
+				else 
+				{
+					fStockInterval = Math.abs(fTmp);
+				}
+			}
+			else if(fStockInterval < 0.01)
+			{
+				fStockInterval = 0.01;
+			}
+			
+			fStockInterval = parseFloat(fStockInterval.toFixed(2));
+			
+			var fStockAvg = (fMaxStockData + fMinStockData)/2;
+			fStockAvg = parseFloat(fStockAvg.toFixed(2));
+			
+			fMaxStockData = fStockAvg + fStockInterval * 2;
+			fMinStockData = fStockAvg - fStockInterval * 2;
+			
+			if(g_arrHold.length > 0 && stockData.length > 0)
+			{
+				if(typeof(g_fAssetPre) != 'undefined')
+				{
+					g_myChart.setOption({
+						tooltip : {
+							formatter:function(params, ticket, callback)
+							{
+								var res = '';
+								
+								var strCurPrice = g_fAssetPre * (1 + params[0].value * 0.01);
+								
+								if(fMaxPrice >= 10000 && fMaxPrice < 100000000)
+								{
+									strCurPrice = strCurPrice.toFixed(2);
+									strCurPrice = (strCurPrice / 10000).toFixed(2);
+									
+									var fUnitPrice = fMaxPrice.toFixed(2);
+									fUnitPrice = (fUnitPrice / 10000).toFixed(2);
+									
+									if(fUnitPrice >= 10000)
+										strCurPrice = (strCurPrice/10000).toFixed(2)  + '亿';
+									else
+										strCurPrice = parseFloat(strCurPrice).toFixed(2) + '万';
+								}
+								else if(fMaxPrice >= 100000000)
+								{
+									strCurPrice = strCurPrice.toFixed(2);
+									strCurPrice = (strCurPrice / 100000000).toFixed(2) + '亿';
+								}
+								else
+								{
+									strCurPrice = strCurPrice.toFixed(2);
+								}
+								
+								if(params[0])
+								{
+									res += params[0].name + '<br/>';
+									res += '<span style="display:inline-block;margin-right:5px;width:12px;height:12px;background-color:#ff6077;font-size:0"></span>'
+									res += params[0].seriesName + ' : ' + strCurPrice + ' ' + parseFloat(params[0].value).toFixed(2) + '%' + '<br/>';
+								}
+								
+								if(params[1])
+								{
+									res += '<span style="display:inline-block;margin-right:5px;width:12px;height:12px;background-color:#66a6ff;font-size:0"></span>'
+									res += params[1].seriesName + ' : ' + params[1].value + '%' +'<br/>';
+								}
+								
+								return res;
+							}
+						},
+						xAxis : {
+							data : g_xAxisValue,
+							axisLabel:{
+								interval:0,
+								formatter:function(value,index){
+									if(index == 0 || index == 60 || index == 120
+										|| index == 181 || index ==241)
+									{
+										return value;
+									}
+								}
+							}
+						},
+						yAxis : [
+							{
+								max:fMaxStockData,
+								min:fMinStockData,
+								interval:fStockInterval
+							},
+							{
+								max:fMaxStockData,
+								min:fMinStockData,
+								interval:fStockInterval,
+								axisLabel : {
+									formatter: function(value, index){
+									
+										var strCurPrice = g_fAssetPre * (1 + value * 0.01);
+										
+										var strUnit = '';
+									
+										if(g_fAssetPre == 0)
+										{
+											strCurPrice = value * 0.5;
+										}
+										
+										if(fMaxPrice >= 10000 && fMaxPrice < 100000000)
+										{
+											strCurPrice = strCurPrice.toFixed(2);
+											strCurPrice = (strCurPrice / 10000).toFixed(2);
+											
+											var fUnitPrice = fMaxPrice.toFixed(2);
+											fUnitPrice = (fUnitPrice / 10000).toFixed(2);
+											
+											if(fUnitPrice >= 10000)
+											{
+												strCurPrice = (strCurPrice/10000).toFixed(2);
+												strUnit = '亿';
+											}
+											else
+											{
+												strCurPrice = strCurPrice;
+												strUnit = '万';
+											}
+										}
+										else if(fMaxPrice >= 100000000)
+										{
+											strCurPrice = (strCurPrice / 100000000).toFixed(2);
+											strUnit = '亿';
+										}
+										else
+										{
+											strCurPrice = strCurPrice.toFixed(2);
+										}
+										
+										if(strCurPrice >= 0)
+										{
+											strCurPrice = ' ' + strCurPrice;
+										}
+										
+										strCurPrice += strUnit;
+									
+										return strCurPrice;
+									},
+									textStyle:{
+										color: function(value){
+											var strCurPrice = g_fAssetPre * (1 + value * 0.01);
+										
+											if(g_fAssetPre == 0)
+											{
+												strCurPrice = value * 0.5;
+											}
+											
+											return strCurPrice >= 0 ? "#e82323" : "#5767E3";
+										},
+										fontSize:'13',
+										fontFamily:'SimSun'
+									}
+								}
+							}
+						],
+						series : [{
+							name : g_strUserName,
+							data : g_arrHold,
+							yAxisIndex: 0
+						},
+						{
+							name : g_strStockName,
+							data : stockData,
+							yAxisIndex: 0
+						}]
+					});
+				}
+				else
+				{
+					g_myChart.setOption({
+						xAxis : {
+							data : g_xAxisValue,
+							axisLabel:{
+								interval:0,
+								formatter:function(value,index){
+									if(index == 0 || index == 60 || index == 120
+										|| index == 181 || index ==241)
+									{
+										return value;
+									}
+								}
+							}
+						},
+						yAxis : [
+							{
+								max:fMaxStockData,
+								min:fMinStockData,
+								interval:fStockInterval
+							},
+							{
+								max:fMaxStockData,
+								min:fMinStockData,
+								interval:fStockInterval
+							}
+						],
+						series : [{
+							name : g_strUserName,
+							data : g_arrHold,
+							yAxisIndex: 0
+						},
+						{
+							name : g_strStockName,
+							data : stockData,
+							yAxisIndex: 0
+						}]
+					});
+				}
+			}
+		}
+	}
+	
+	// 切换当日/近30日的响应函数
+	$(function(){
+		$('#J_timeRange li').click(function(){
+			if($(this).hasClass('cur'))
+			{
+				return;
+			}
+			
+			g_myChart.clear();
+			g_myChart.setOption(option); 
+			window.onresize = g_myChart.resize;
+			
+			$('#J_timeRange li').removeClass('cur');
+			$(this).addClass('cur');
+			g_curLi = $(this).attr('id');
+			
+			if($(this).attr('id') == 'jsst')
+			{
+				g_xcsStatus = fnFunction('get_module_statue', 'module=xcs\nuser=' +g_curUserInfo);
+		
+				g_xcsStatus = parseInt(g_xcsStatus);
+			
+				var nXcsMode = fnFunction('get_authorization', 'func_id=11\nuser=' +g_curUserInfo);
+				
+				nXcsMode = parseInt(nXcsMode);
+				
+				if(nXcsMode < 0)
+				{
+					g_xcsStatus = -2;
+					SendLogToServer('DT_CX_XCS', '-1', '不支持小财神功能', 'd_xcs_st=' + g_xcsStatus);
+				}
+
+				HandleXcsStatus(g_xcsStatus);
+				
+				document.getElementById("drzjqx-head").innerHTML = '近30日资金曲线';
+				
+				SendCBAS(6, '1|DIALOG|资金曲线页面|165|30日');
+				
+				if(g_xcsStatus == 4 || g_xcsStatus >= 10)
+				{
+					if(g_jsstSzzs.length > 1 && g_jsstZjqx.length > 1)
+					{
+						startanimateCurve();
+					}
+				}
+			}
+			else
+			{
+				document.getElementById("drzjqx-head").innerHTML = '当日资金曲线';
+				
+				SendCBAS(6, '1|DIALOG|资金曲线页面|165|当日');
+				
+				startanimateCurve();
+			}
+			
+
+			fnRefreshChart();
+		})
+	})
+	
+	// 指数切换的响应函数
+	$(function(){
+		$('#stockswitch li').click(function(e){
+			g_curStockLi = $(this).attr('id');
+			
+			if(g_curStockLi == 'szzs')
+			{
+				g_strStockName = '上证指数';
+			}
+			else if(g_curStockLi == 'szcz')
+			{
+				g_strStockName = '深证成指';
+			}
+			else if(g_curStockLi == 'cybz')
+			{
+				g_strStockName = '创业板指';
+			}
+			
+			document.getElementById('zjqx-stock').innerHTML = g_strStockName;
+			
+			var obj = document.getElementById('nav-drop')
+			obj.style.display = 'none';
+			
+			fnRefreshChart();
+			startanimateCurve();
+		})
+	})
+	
+	$(function(){
+		if(bUseCefBrowser)
+		{
+			$('.tip-zjzl').tinytooltip({message: "账户总览显示的是您账户在查询时间点时的账户情况，以实际资产情况为准，仅供参考!"});
+			
+			$('.tip-drzjqx').tinytooltip({message: "资金曲线显示的是您账户在一定时间段内的资金情况，以账户实际资金情况为准，仅供参考!"});
+		}
+	})
+	
+	$('#frame').niceScroll({
+        cursorcolor: '#c1c1c1',//滚动条的颜色
+        cursoropacitymax: 1, //滚动条的透明度，从0-1
+        touchbehavior: false, //使光标拖动滚动像在台式电脑触摸设备
+        cursorwidth: '10px', //滚动条的宽度
+        cursorborder: '2', // 游标边框css定义
+        cursorborderradius: '10px',//以像素为光标边界半径  圆角
+        autohidemode: false, //是否隐藏滚动条  true的时候默认不显示滚动条，当鼠标经过的时候显示滚动条
+        zindex:'auto',//给滚动条设置z-index值
+        railpadding: { top:0, right:0, left:0, bottom:0 },//滚动条的位置
+		background: '#f1f1f1',
+		horizrailenabled: false
+    });
+	
+    </script>
+</body>

@@ -1,0 +1,1011 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+    <head>       				
+		<meta http-equiv="pragma" content="no-cache"> 
+		<meta http-equiv="Cache-Control" content="no-cache, must-revalidate"> 
+		<meta http-equiv="expires" content="Wed, 26 Feb 1997 08:21:57 GMT">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+		<!-[if lte IE8]>
+			<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">
+			<script type="text/javascript" src="json2.js"></script>
+		<![endif]->
+		<script type="text/javascript" src="../comm/jquery-1.6.1.js"></script> 
+		<script type="text/javascript" src="../comm/jquery.json-2.3-debug.js"></script> 	
+		<script type="text/javascript" src="../comm/hxcomm.js"></script> 
+		<script type="text/javascript" src="../comm/clientAPI.js"></script> 		
+		<script type="text/javascript" src="./jquery-1.6.1.js"></script> 
+		<script type="text/javascript" src="./jquery.json-2.3-debug.js"></script> 	
+		<script type="text/javascript" src="./hxcomm.js"></script> 
+		<script type="text/javascript" src="./sginfo.js"></script> 
+		<script type="text/javascript" src="./request.js"></script>
+		<script type="text/javascript" src="js/dssgCtrl.js"></script>
+    </head> 
+	<body>
+<Script Language="JavaScript">
+/*****************************************************************************************************************************
+*************************************************************原新股页面函数***************************************************
+*****************************************************************************************************************************/
+/* 修改宗旨：不改变原流程，只去掉一些显示页面的东西
+* 修改地方
+*
+* 1.原函数fnStart函数名冲突修改为formerStart，同时去掉用不着的地方
+* 2.去掉g_dlgSize和g_htmlReqStatus
+* 3.原函数fn_yijian_sg函数名修改formerSg，同时去掉用不着的地方
+*
+*/
+/*
+ *g_arrayXgInfo[xg_index][0] 证券名称
+ *g_arrayXgInfo[xg_index][1] 申购代码
+ *g_arrayXgInfo[xg_index][2] 可申购数量
+ *g_arrayXgInfo[xg_index][3] 已申购数量
+ *g_arrayXgInfo[xg_index][4] 市场代码
+ *g_arrayXgInfo[xg_index][5] 申购价格
+*/
+var g_arrayXgInfo = new Array();
+
+/*
+ *变量使用原因:	用于解决快速多次点击客户端运营位问题
+ *使用方法:		在调用客户端函数前，变量赋值，客户端回调后变量
+ *				清空保证，客户端回调，一定进入到 g_callbackName
+ *				期望的回调函数中,
+*/
+var g_callbackName = "";							
+
+var g_curUserInfo = "";                             // 当前用户信息
+var g_qsid = "";									// 券商ID		
+var g_loginType = 0;								// 用户登录类型
+var g_ReqDest = "0";								// 信息源destination "0" 券商主站,"1" 自运营主站,"2" 认证中心 20170419仅记录日志时使用
+var g_count = 0;									// 全局变量存放申购失败错误信息的个数
+var g_retMsg = new Array();							// 全局变量存放申购失败错误信息
+var g_showStatus = "";								// 全局变量存放弹框消息的备注内容
+var g_xginfolog = new Array();						//新股日志记录表
+/************************************************************
+*g_xginfolog[0]			datatype	业务类型调用方式
+*g_xginfolog[1]			pkg版本
+*g_xginfolog[2]			retcode
+*g_xginfolog[3]			retmsg
+*g_xginfolog[4]			cbasdata  字符串
+*************************************************************/
+var g_xginfolog_ext = new Array();					//新股日志记录
+/************************************************************
+*g_xginfolog_ext[0]			新股列表信息
+*g_xginfolog_ext[1]			可申购数量返回信息
+*g_xginfolog_ext[2]			委托入参
+*g_xginfolog_ext[3]         可买数量信息
+*************************************************************/
+
+var g_sgCode = ""; 			// 申购代码
+var g_sgCodeIndex = 0;		// 数值索引
+var g_strDssgLog = "";
+
+/*
+* 函数功能说明：
+* 1、查询新股信息的回调函数
+* 2、根据取到的新股信息，向后台请求可申购数量
+* 
+*------------------------------------------------------
+*步骤说明:
+*数据处理：parse_sglist函数解析入口参数，获取新股数据存在g_xgInfo_array中
+*逻辑处理：组织请求
+*动作：发送请求(查询可申购数量)
+*/
+g_xginfolog_ext[0] = "";
+g_xginfolog_ext[3] = "";
+function fn_callback_xginfo(xg_list) 
+{
+	//计算查新股信息的请求耗时 g_ReqDest=0表示从券商查，1表示从自营查询，对应变量rt_xgxx[0]和[1]
+	if(g_ReqDest == '0') 
+	{
+		rt_xgxx[0] = Calc_Request_Time();
+	}
+	else 
+	{
+		rt_xgxx[1] = Calc_Request_Time();
+	}
+	
+	write_html_log('**********dssg.html********fn_callback_xginfo函数开始');
+	var strToObj = new Function("return" + xg_list)();
+    var cur_ReqDest = strToObj.local.destination;
+	if((strToObj.reply.ret_code == "-1" || !(strToObj.reply.table) || xg_list == '') && cur_ReqDest  == "0")
+	{
+		g_ReqDest = "1";  
+		g_xginfo_support = '0';  //往自营查则必须发C或者L-0-cx_xgsg请求
+		fn_cxXgInfo("fn_callback_xginfo","1");	//从自运营主站获取新股信息
+		return;
+	}
+	if(g_callbackName != "fn_callback_xginfo") return;			
+	g_callbackName = "";
+	
+	write_html_log('fn_callback_xginfo' + xg_list);	
+	g_arrayXgInfo = parse_sglist(g_qsid, xg_list, g_curUserInfo, g_loginType, cur_ReqDest, g_ReqDest);
+	
+	write_html_log('解析新股列表长度为:' + g_arrayXgInfo.length);
+	var qs_id_num = parseInt(g_qsid);
+	if (g_arrayXgInfo.length > 0) 
+	{
+		g_sgCode = g_arrayXgInfo[g_sgCodeIndex][1];					// 申购代码
+		var  marketCode = g_arrayXgInfo[g_sgCodeIndex][4];			// 市场代码
+		var  sgPrice    = g_arrayXgInfo[g_sgCodeIndex][5];			// 申购价格
+		g_sgCodeIndex++;
+		
+		if(g_xginfo_support == '1') // 是否支持cx_xginfo返回可申购数量，'1'为支持，则直接查询已申购数量
+		{
+			g_callbackName = "fn_callback_haveCount";
+			//查询已申购数量
+			fn_cxHaveCount(g_callbackName);
+		}
+		else 
+		{
+			if (g_ksgsl_request == 'cx_xgsg') // cx_xgsg表示从该请求获取可申购数量，反之为C请求
+				{			
+					g_callbackName = "fn_callback_cxQsbKsgsl";
+					fn_cxQsbKsgsl(g_callbackName,marketCode,g_sgCode,sgPrice);
+				}
+				else
+				{
+			
+					g_callbackName = "fn_callback_cxKsgsl";
+					//查询可申购数量
+					fn_cxKsgsl(g_callbackName,marketCode,g_sgCode,sgPrice);
+				}
+		}
+		
+	}
+	else
+	{
+		//g_cbasdata = 查新股信息耗时|NONE_IPO_INFO
+		g_cbasdata = 'rt_xgxx[0]=' + rt_xgxx[0] + '|';
+		if(g_ReqDest == '1')//判断是否有从自营进行查询新股信息
+		{
+			g_cbasdata += 'rt_xgxx[1]=' + rt_xgxx[1] + '|';
+		}
+			g_cbasdata += 'i_xgxx=NONE_IPO_INFO';
+		
+		UploadLog('QUERY_XGINFO', '-1', '从自营未查回新股信息', g_cbasdata, 'DSSG');
+		InitLogData();
+	}
+	
+	write_html_log('**********dssg.html********fn_callback_xginfo函数结束');
+}
+
+/*
+* 函数功能说明：
+* 1、查询可申购数量的回调函数
+* 2、向后台请求已申购数量
+* 
+*------------------------------------------------------
+* 参数说明：
+* 格式：{错误代码，错误信息,数据{证券代码，可申购数量}}
+* 例如：{"code":"0","msg":"","data":{"zqdm":"732069","valvol":"1000"}}
+*------------------------------------------------------
+*步骤说明:
+*数据处理：	parse_ksgsl函数解析入口参数，获取可申购数量存在g_xgInfo_array中
+*逻辑处理：	如果有多只新股，需要多次调用客户端函数，获取每只新股的可申购数量
+			但由于客户端回调到页面是异步的，所以不能一个for循环遍历调用客户端回调
+			需要一个数值索引，一个记录申购代码的变量，回调一次，获取一次，在回调下一次
+*动作：发送请求(查询已申购数量)
+*/
+g_xginfolog_ext[1] = '';
+g_xginfolog_ext[8] = '';
+function fn_callback_cxKsgsl(cx_ksgsl_list) 
+{
+	write_html_log('**********dssg.html********fn_callback_cxKsgsl函数开始');
+	var strdes = fun_str_replace(cx_ksgsl_list);
+	var strToObj = new Function("return" + strdes)();
+	var log_str = window.JSON.stringify(strToObj);
+	if(g_xginfolog_ext[3].length > 0) //为了记录主站推送消息之后还有的一次回调信息
+	{
+		g_xginfolog_ext[3] += "|";
+	}
+	g_xginfolog_ext[3] += log_str;
+	
+	if(g_callbackName != "fn_callback_cxKsgsl") return;
+	g_callbackName = "";
+	write_html_log('fn_callback_cxKsgsl' + cx_ksgsl_list);
+	var array_ksgslList = parse_ksgsl(g_qsid, cx_ksgsl_list, g_curUserInfo);
+	write_html_log('解析可申购数量股列表长度为:' + array_ksgslList.length);
+	g_strDssgLog += "查可申购数量:股票代码" + array_ksgslList[0] + ",返回主站为" + array_ksgslList[2];
+	//本地申购代码与回调函数申购代码做比较,若push_reply字段为1(主站推送消息),直接返回
+	if(g_sgCode != array_ksgslList[0] || array_ksgslList[2] == '1' ) 
+	{
+		//计算查可申购数量的请求耗时
+		rt_xgksg = Calc_Request_Time();
+		
+		//上传异常情况日志
+		//g_retmsg存在默认值，若请求返回串中有则使用该值
+		if(array_ksgslList[4] == '' || typeof(array_ksgslList[4]) == 'undefined')
+		{
+			g_retmsg = '可买数量错误';
+		}
+		else 
+		{
+			g_retmsg = array_ksgslList[4];
+		}
+		
+		//g_cbasdata：查业务标识耗时|查新股信息耗时|查可申购数量耗时|g_xginfolog[4]
+		//g_xginfolog[4] = 可申购数量入参 | 申购代码 | 处理回调的证券代码||可买数量信息
+		g_xginfolog[4] = g_xginfolog_ext[4] +  "|" + g_sgCode + "_" + array_ksgslList[0] + "|" + g_xginfolog_ext[3];
+		g_cbasdata = 'rt_xgyw=' + rt_xgyw + '|' +  'rt_xgxx[0]=' + rt_xgxx[0] + '|';
+		if(g_ReqDest == '1')//判断是否自营查询新股信息
+		{
+			g_cbasdata += 'rt_xgxx[1]=' + rt_xgxx[1] + '|' 
+		}	
+		g_cbasdata += 'rt_xgksg=' + rt_xgksg + '||' + 'i_xgksg=' + g_xginfolog[4];
+		
+		UploadLog('QUERY_KSGSL', '-1', g_retmsg, g_cbasdata, 'DSSG');
+		InitLogData();
+		return;
+	}
+	var qs_id_num = parseInt(g_qsid);
+	for (var j = 0; j < g_arrayXgInfo.length; j++) 
+	{
+		
+		// g_arrayXgInfo[j][1]申购代码
+		if (array_ksgslList[0] == g_arrayXgInfo[j][1] ) //使用回调函数中申购代码与新股信息列表中申购代码做比较
+		{
+			if(g_xginfolog_ext[1].length > 0) 
+			{
+				g_xginfolog_ext[1] += "_";
+			}
+			g_xginfolog_ext[1] += array_ksgslList[3] + '_' + g_arrayXgInfo[j][1] + "_" + array_ksgslList[1];
+			if(array_ksgslList[1] == '' || array_ksgslList[1] == undefined)
+			{
+				array_ksgslList[1] = 0;
+			}
+			g_strDssgLog += ",可申购数量为" + array_ksgslList[1] + ";";
+			g_arrayXgInfo[j][2] = array_ksgslList[1]; // 可申购数量
+			var maxSgCount = g_arrayXgInfo[j][2];
+			
+			var  sgsx    = g_arrayXgInfo[j][6];				// 申购上限	
+			switch (qs_id_num)
+			{
+				case 31:	// 国泰君安20170406 申购上限
+				//case 80:	// 兴业证券20170406 申购上限
+				//case 339:	// 浙商证券20170406 申购上限
+					if(parseInt(maxSgCount) > parseInt(sgsx) && parseInt(sgsx) != 0 )
+					{
+						maxSgCount = (parseInt(sgsx))+'';
+						g_arrayXgInfo[j][2] = maxSgCount;
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		}
+	} 
+	
+	//有多只新股时，根据g_sgCodeIndex的数值索引循环调用客户端函数
+	if (g_sgCodeIndex < g_arrayXgInfo.length) 
+	{
+		g_sgCode = g_arrayXgInfo[g_sgCodeIndex][1];					// 申购代码
+		var  marketCode = g_arrayXgInfo[g_sgCodeIndex][4];			// 市场代码
+		var  sgPrice    = g_arrayXgInfo[g_sgCodeIndex][5];			// 申购价格
+		g_strDssgLog += "fn_callback_cxKsgsl 开始查询下一支新股的可申购数量;";
+		g_sgCodeIndex++;
+		g_callbackName = "fn_callback_cxKsgsl";
+		//查询可申购数量
+		fn_cxKsgsl(g_callbackName,marketCode,g_sgCode,sgPrice);
+	} else 
+	{
+		//计算可申购数量的请求耗时
+		rt_xgksg = Calc_Request_Time();
+		
+		//初始化查已申购数量请求的时间戳，查询已申购数量
+		g_callbackName = "fn_callback_haveCount";
+		fn_cxHaveCount(g_callbackName);
+	}
+
+} // function
+		
+//券商版查可申购数量
+function fn_callback_cxQsbKsgsl(cx_QsbKsgsl_list) 
+{	
+	var strdes = fun_str_replace(cx_QsbKsgsl_list);
+	var strToObj = new Function("return" + strdes)();
+	var log_str = window.JSON.stringify(strToObj);
+	if(g_xginfolog_ext[3].length > 0) //为了记录主站推送消息之后还有的一次回调信息
+	{
+		g_xginfolog_ext[3] += "|";
+	}
+	g_xginfolog_ext[3] += log_str;
+	
+	if(g_callbackName != "fn_callback_cxQsbKsgsl") return;
+	g_callbackName = "";
+	write_html_log('fn_callback_cxQsbKsgsl' + cx_QsbKsgsl_list);
+	var array_ksgslList = parse_qsbksgsl(g_qsid, cx_QsbKsgsl_list, g_curUserInfo);
+	write_html_log('解析可申购数量股列表长度为:' + array_ksgslList.length);
+	g_strDssgLog += "查可申购数量:股票代码" + array_ksgslList[0] + ",返回主站为" + array_ksgslList[2];
+	//本地申购代码与回调函数申购代码做比较,若push_reply字段为1(主站推送消息),直接返回
+	if(g_sgCode != array_ksgslList[0] || array_ksgslList[2] == '1' ) 
+	{
+		//计算查可申购数量的请求耗时
+		rt_xgksg = Calc_Request_Time();
+		
+		//上传异常情况日志
+		//g_retmsg存在默认值，若请求返回串中有则使用该值
+		if (array_ksgslList[4] == '' || typeof(array_ksgslList[4]) == 'undefined')
+		{
+			g_retmsg = '可买数量错误';
+		}
+		else 
+		{
+			g_retmsg = array_ksgslList[4];
+		}
+		
+		//g_xginfolog[4] = 可申购数量入参 | 申购代码 | 处理回调的证券代码|可买数量信息
+		//g_cbasdata：查业务标识耗时|查新股信息耗时|查可申购数量耗时||g_xginfolog[4]
+		g_xginfolog[4] = g_xginfolog_ext[4] +  "|" + g_sgCode + "_" + array_ksgslList[0] + "|" + g_xginfolog_ext[3];
+		g_cbasdata = 'rt_xgyw=' + rt_xgyw + '|' +  'rt_xgxx[0]=' + rt_xgxx[0] + '|';
+		if(g_ReqDest == '1')  //判断是否自营查询新股信息
+		{
+			g_cbasdata += 'rt_xgxx[1]=' + rt_xgxx[1] + '|';
+		}
+		g_cbasdata += 'rt_xgksg = ' + rt_xgksg + '|' + 'i_xgksg=' + g_xginfolog[4];
+		
+		UploadLog('QUERY_KSGSL', '-1', g_retmsg, g_cbasdata, 'DSSG');
+		InitLogData();
+		return;
+	}
+	var qs_id_num = parseInt(g_qsid);
+	for (var j = 0; j < g_arrayXgInfo.length; j++) 
+	{
+		
+		// g_arrayXgInfo[j][1]申购代码
+		if (array_ksgslList[0] == g_arrayXgInfo[j][1] ) //使用回调函数中申购代码与新股信息列表中申购代码做比较
+		{
+			if(g_xginfolog_ext[1].length > 0) 
+			{
+				g_xginfolog_ext[1] += "_";
+			}
+			g_xginfolog_ext[1] += array_ksgslList[3] + '_' + g_arrayXgInfo[j][1] + "_" + array_ksgslList[1];
+			if(array_ksgslList[1] == '' || array_ksgslList[1] == undefined)
+			{
+				array_ksgslList[1] = 0;
+			}
+			g_strDssgLog += ",可申购数量为" + array_ksgslList[1] + ";";
+			g_arrayXgInfo[j][2] = array_ksgslList[1]; // 可申购数量
+			break;
+		}
+	} 
+	//有多只新股时，根据g_sgCodeIndex的数值索引循环调用客户端函数
+	if (g_sgCodeIndex < g_arrayXgInfo.length) 
+	{
+		g_sgCode = g_arrayXgInfo[g_sgCodeIndex][1];					// 申购代码
+		var  marketCode = g_arrayXgInfo[g_sgCodeIndex][4];			// 市场代码
+		var  sgPrice    = g_arrayXgInfo[g_sgCodeIndex][5];			// 申购价格
+		g_strDssgLog += "fn_callback_cxQsbKsgsl 开始查询下一支新股的可申购数量;";
+		g_sgCodeIndex++;
+		g_callbackName = "fn_callback_cxQsbKsgsl";
+		fn_cxQsbKsgsl(g_callbackName,marketCode,g_sgCode,sgPrice);
+	} 
+	else 
+	{
+		//计算可申购数量的请求耗时
+		rt_xgksg = Calc_Request_Time();
+		
+		//初始化已申购数量请求的时间戳，查询已申购数量
+		g_callbackName = "fn_callback_haveCount";
+		fn_cxHaveCount(g_callbackName);
+	}
+	write_html_log('**********dssg.html********fn_callback_cxKsgsl函数结束');
+
+} // function
+
+/*
+* 函数功能说明：
+* 1、查询已申购数量的回调函数
+* 2、呈现页面
+* 
+*------------------------------------------------------
+*步骤说明:
+*数据处理：	parse_ywtsl函数解析入口参数，获取可申购数量存在g_xgInfo_array中
+*逻辑处理：	找到对应的申购代码设置已申购数量
+*	动作：	展示页面
+*/
+function fn_callback_haveCount(cx_xgwt_list) 
+{
+	//计算已申购数量的请求耗时
+	rt_xgysg = Calc_Request_Time();
+	
+	if(g_callbackName != "fn_callback_haveCount") return;
+	g_callbackName = "";
+	var array_xgwtList = parse_ywtsl(g_qsid, cx_xgwt_list, g_curUserInfo);
+	
+	//g_cbasdata = 查新股信息耗时|查可申购数量耗时|查已申购数量耗时
+	g_cbasdata = 'rt_xgxx[0]=' + rt_xgxx[0] + '|';
+	if(g_ReqDest == '1') //判断是否有自营查询新股信息
+	{
+		g_cbasdata += 'rt_xgxx[1]=' + rt_xgxx[1] + '|' ;
+	}
+	g_cbasdata += 'rt_xgksg=' + rt_xgksg + '|' + 'rt_xgysg=' + rt_xgysg ;
+	
+	if (array_xgwtList.length == 0)
+	{
+		UploadLog('QUERY_YSGSL','0','无已申购新股',g_cbasdata, 'DSSG');
+		InitLogData();
+	}
+	else
+	{
+		g_cbasdata += '|' + 'i_xgysg=';
+		
+		for (var i = 0; i < array_xgwtList.length; i++) 
+		{
+			// 找到对应的申购代码设置已申购数量
+			for (var j = 0; j < g_arrayXgInfo.length; j++) 
+			{
+				if (g_arrayXgInfo[j][1] == array_xgwtList[i][0]) 
+				{
+					g_arrayXgInfo[j][3] = array_xgwtList[i][1]; // 已申购数量
+					
+					//g_cbasdata加上 证券名称1_申购代码1_可申购数量1_已申购数量1_证券名称2...
+					g_cbasdata += g_arrayXgInfo[j][0] + '_' + g_arrayXgInfo[j][1] + '_' + g_arrayXgInfo[j][2] + '_' + g_arrayXgInfo[j][3] + '_'; 
+					break;
+				} // if
+			} // for
+		} // for
+		
+		//日志上传
+		g_cbasdata = g_cbasdata.substring(0,g_cbasdata.length-1);//去除最后的'_'符号；
+		UploadLog('QUERY_YSGSL','0','已申购新股信息',g_cbasdata, 'DSSG');
+		InitLogData();
+	}
+	
+	DoXgSg();
+	write_html_log('**********dssg.html********fn_callback_haveCount函数结束');
+}
+
+/*
+* 函数功能说明：
+* 1、点击一键申购按钮的执行函数
+* 
+*------------------------------------------------------
+*步骤说明:
+*逻辑处理：	根据g_xgInfo_array数组的大小，循环调用客户端的xgwt，完成申购
+*/
+function DoXgSg() 
+{
+	write_html_log('**********dssg.html********DoXgSg函数开始');
+	//var g_count = 0;
+	//var g_retMsg = new Array();
+	// g_arrayXgInfo[g_count][2]为可申购，g_arrayXgInfo[g_count][3]为已申购
+	// 循环中的逻辑是:顺序查找新股列表,过滤不符合申购条件的新股,直到遇见符合申购条件的新股.
+	while(g_arrayXgInfo[g_count][2] == 0 || g_arrayXgInfo[g_count][2] == '' || g_arrayXgInfo[g_count][3] > 0)
+	{
+		//g_arrayXgInfo[g_count][3] = 0;			// 如果可申购数量为零，就给已申购数量赋值为零
+		g_retMsg[g_count] = 2;		// 有错误就给标记赋值为2
+		if(g_arrayXgInfo.length <= (g_count + 1))			// 判断新股列表还有没有新股,如果没有新股，就展示页面
+		{
+			//g_cbasdata = 查新股信息耗时|查可申购数量耗时|查已申购数量耗时
+			g_cbasdata = 'rt_xgxx[0]=' + rt_xgxx[0] + '|';
+			if(g_ReqDest == '1')//判断是否自营查询新股信息
+			{
+				g_cbasdata += 'rt_xgxx[1]=' + rt_xgxx[1] + '|';
+			}
+			g_cbasdata += 'rt_xgksg=' + rt_xgksg + '|' + 'rt_xgysg=' + rt_xgysg;
+			
+			UploadLog("QUERY_KSGSL", '-1', "没有可申购新股", g_cbasdata, 'DSSG');
+			InitLogData();
+			return;
+		}
+		g_count++;
+	}
+	
+	var  sgCode = g_arrayXgInfo[g_count][1];				// 申购代码
+	var  maxSgCount = g_arrayXgInfo[g_count][2];			// 可申购数量
+	var  marketCode = g_arrayXgInfo[g_count][4];			// 市场代码
+	var  sgPrice    = g_arrayXgInfo[g_count][5];			// 申购价格
+	g_callbackName = "fn_callbackXgwt";
+	g_strDssgLog = "DoXgSg 委托新股:" + g_arrayXgInfo[g_count][0] + ";";
+	fn_xgwt(g_callbackName,sgCode,maxSgCount,marketCode,sgPrice);
+
+	write_html_log('**********dssg.html********DoXgSg函数结束');
+}
+
+	
+		
+
+var g_arrErrorInfo = new Array();	
+
+/*
+* 函数功能说明：
+* 1、申购回调函数
+* 
+*------------------------------------------------------
+*步骤说明:
+*逻辑处理：	取出申购状态，和申购信息、
+*动作：  :  呈现申购信息在页面
+*/
+function fn_callbackXgwt(pram)
+{
+	//计算委托耗时
+	rt_wt = Calc_Request_Time();
+	
+	write_html_log('**********dssg.html********fn_callbackXgwt函数开始');
+	if(g_callbackName != "fn_callbackXgwt") 
+		return;
+	
+	g_callbackName = "";
+	write_html_log('fn_callbackXgwt' + pram);
+
+	// BEGIN:该段函数作用为新股日志记录和上传
+	var array_yjsgReplyInfo = parse_yijiansg(g_qsid, pram, g_curUserInfo);
+	write_html_log('一键申购返回信息长度为:' + array_yjsgReplyInfo.length);
+	// 存储错误消息
+	if(array_yjsgReplyInfo[0] != '0')		//ret_code
+	{
+		//申购失败
+		g_arrErrorInfo[g_count] = array_yjsgReplyInfo[1];
+		g_retMsg[g_count] = array_yjsgReplyInfo[1];		//ret_msg
+		
+		//组装日志数据
+		g_retcode = '-1';
+		g_retmsg = array_yjsgReplyInfo[1];
+		//i_error = 新股列表信息|可申购数量返回信息|委托请求的入参|查可申购数量的入参|可买数量信息
+		//g_cbasdata = 委托耗时|本次申购的证券名称_申购代码_可申购数量_市场代码_申购价格||i_error
+		g_cbasdata = 'rt_wt=' + rt_wt + '|' + 'i_dswt=' + g_arrayXgInfo[g_count][0] + "_" + g_arrayXgInfo[g_count][1] + "_" + g_arrayXgInfo[g_count][2] + "_" + g_arrayXgInfo[g_count][4] + "_" + g_arrayXgInfo[g_count][5] + "_" +  g_arrayXgInfo[g_count][7] + "||" + 'i_error='+ g_xginfolog_ext[0] + "|" + g_xginfolog_ext[1] + "|" + g_xginfolog_ext[2] + "|" + g_xginfolog_ext[4] + "|" + g_xginfolog_ext[3];	
+	}
+	else
+	{
+		//申购成功
+		g_arrErrorInfo[g_count] = 1;
+		g_retMsg[g_count] = 1;			// 如果正确让他等于1
+		
+		//组装日志数据
+		g_retcode = '0';
+		g_retmsg = '成功';
+		//g_cbasdata=申购耗时|本次申购的证券名称_申购代码_可申购数量_已申购数量_市场代码_申购价格|股东账户1_证券名称1_证券代码1_股东账户2...
+		g_cbasdata  = 'rt_wt=' + rt_wt + '|' + 'i_dswt=' + g_arrayXgInfo[g_count][0] + "_" + g_arrayXgInfo[g_count][1] + "_" + g_arrayXgInfo[g_count][2] + "_" + g_arrayXgInfo[g_count][4] + "_" + g_arrayXgInfo[g_count][5] + "_" + g_arrayXgInfo[g_count][7] +  "|" + 'i_xgzh=' + g_xginfolog_ext[1];
+	}
+
+	var strTime = GetCurStrTime();
+	CBASRecord(strTime);
+	
+	//新股日志上传
+	UploadLog('DSWT' ,g_retcode ,g_retmsg , g_cbasdata , 'DSSG');
+	InitLogData();
+	// END;
+	
+	// 有下一支可申购新股的情况.第一支已经在DoXgSg()函数回调fn_callbackXgwt()函数时申购.
+	if(g_arrayXgInfo.length > (g_count + 1))
+	{
+		g_count++;
+	// 循环中的逻辑是:顺序查找新股列表,过滤不符合申购条件的新股,直到遇见符合申购条件的新股.
+		while(g_arrayXgInfo[g_count][2] == 0 ||g_arrayXgInfo[g_count][2] == '' || g_arrayXgInfo[g_count][3] > 0)
+		{
+			g_retMsg[g_count] = 2;			// 有错误就给标记赋值为2
+			if(g_arrayXgInfo.length <= (g_count + 1))			// 判断新股列表还有没有新股,如果没有新股，就展示页面
+			{
+				SetCurDssgStatus();
+				ShowDssgPop();
+				return;
+			}
+			g_count++;
+		}
+		var  sgCode = g_arrayXgInfo[g_count][1];				// 申购代码
+		var  maxSgCount = g_arrayXgInfo[g_count][2];			// 可申购数量
+		var  marketCode = g_arrayXgInfo[g_count][4];			// 市场代码
+		var  sgPrice    = g_arrayXgInfo[g_count][5];			// 申购价格
+		g_strDssgLog = "fn_callbackXgwt 委托新股:" + g_arrayXgInfo[g_count][0] + ";";
+		g_callbackName = "fn_callbackXgwt";
+		fn_xgwt(g_callbackName,sgCode,maxSgCount,marketCode,sgPrice);
+	}
+	// 无下一支可申购新股的情况
+	else
+	{
+		g_strDssgLog = "";
+		SetCurDssgStatus();
+		ShowDssgPop();
+	}
+	write_html_log('**********dssg.html********fn_callbackXgwt函数结束');
+}
+
+/*****************************************************************************************************************************
+*************************************************************定时申购页面逻辑*************************************************
+*****************************************************************************************************************************/
+var g_bHasExtraData = false;
+
+// function:定时申购页面创建时调用的入口函数,控制定时申购流程
+// param:strJson 为json字符串
+// strJson["userinfo"]		用户userkey
+// strJson["extra_data"]	用户新股信息/无
+function fnStart(strJson)
+{
+	write_html_log('**********dssg.html********fnStart函数开始strJson = ' + strJson);
+	if(strJson.length <= 0)
+	{
+		return;
+	}		
+	
+	var jsonUserInfo = window.JSON.parse(strJson);
+	var strUserInfo = jsonUserInfo.userinfo;
+	ParseUserInfo(strUserInfo);
+	InitData();
+	
+	UploadLog('PAGE_CREATE' ,'0' ,'页面创建', '', 'DSSG');
+	
+	if(!IsDssgEnabled(g_curUserInfo))
+	{
+		//g_cbasdata ：f_dssg= 1(0),用户配置信息 or NULL
+		UploadLog('SET_TIMER' ,'-1' ,'配置读取错误', g_cbasdata, 'DSSG');
+		InitLogData();
+		return;
+	}		
+		
+	SetDssgTimer();	
+	
+	var jsonExtraData = jsonUserInfo.extra_data;
+	if (GetJsonSize(jsonExtraData) != 0)
+	{
+		g_bHasExtraData = true;
+		SetXgInfo(jsonExtraData);
+	}
+	
+	g_strDssgLog = "";
+	
+	write_html_log('**********dssg.html********fnStart函数结束');
+}
+
+// function:得到json对象长度
+// param:json对象
+function GetJsonSize(json)
+{
+	write_html_log('**********dssg.html********GetJsonSize函数开始json = ' + json);
+	var nSize = 0;
+	for(var nIndex in json)
+	{
+		if(json.hasOwnProperty(nIndex))
+		{
+			nSize++;
+		}
+	}
+	write_html_log('**********dssg.html********GetJsonSize函数结束nSize = ' + nSize);
+	
+	return nSize;
+}
+
+// function:得到用户信息记录到全局变量中
+// param:用户userkey
+function ParseUserInfo(strUserInfo)
+{
+	write_html_log('**********dssg.html********ParseUserInfo函数开始strUserInfo = ' + strUserInfo);
+	var arrUserInfo = strUserInfo.split('|');
+	g_curUserInfo = arrUserInfo[1];
+	g_loginType = arrUserInfo[2];
+	write_html_log('**********dssg.html********ParseUserInfo函数结束g_curUserInfo = ' + g_curUserInfo + 'g_loginType = ' + g_loginType);
+}
+
+// function:将新股信息记录到全局变量g_arrayXgInfo中
+// param:jsonXgInfo
+function SetXgInfo(jsonXgInfo)
+{
+	write_html_log('**********dssg.html********SetXgInfo函数开始jsonXgInfo = ' + jsonXgInfo);
+	for (var nIndex in jsonXgInfo)
+	{	
+		g_arrayXgInfo[nIndex] = new Array();
+		g_arrayXgInfo[nIndex][0] = jsonXgInfo[nIndex].zqmc;
+		g_arrayXgInfo[nIndex][1] = jsonXgInfo[nIndex].sgdm;
+		g_arrayXgInfo[nIndex][2] = jsonXgInfo[nIndex].ksgsl;
+		g_arrayXgInfo[nIndex][3] = jsonXgInfo[nIndex].sgsl;
+		g_arrayXgInfo[nIndex][4] = jsonXgInfo[nIndex].scdm;
+		g_arrayXgInfo[nIndex][5] = jsonXgInfo[nIndex].sgjg;
+	}
+	write_html_log('**********dssg.html********SetXgInfo函数结束g_arrayXgInfo = ' + g_arrayXgInfo);
+}
+
+// function:配置中定时开关是否打开
+// param:用户userkey
+function IsDssgEnabled(strUserKey)
+{
+	write_html_log('**********dssg.html********IsDssgEnabled函数开始strUserKey = ' + strUserKey);
+	var strFilePath = fnFunction("get_modulepath", "") + "RES\\Zyy\\zyy.ini";
+	var strCfg = ReadConfig("dssg_cfg", strUserKey, "", strFilePath);
+	var jsonCfg = ParseCfg(strCfg);
+	if (!jsonCfg["switch"])
+	{
+		jsonCfg["switch"] = 0;
+	}
+	
+	if (strCfg == '')
+	{
+		g_cbasdata = 'f_dssg=NULL';  //用户未进行配置
+	}
+	else 
+	{
+		g_cbasdata = 'f_dssg=' + strCfg ;  //用户的配置信息  例：1(0),1400
+	}
+	if( GetJsonSize(jsonCfg) == 0 )
+	{
+		return false;
+	}
+	return jsonCfg["switch"];
+}
+
+// function:分析配置
+// param:strCfg 配置字符串
+// arrRet
+// arrRet["switch"]		开关状态
+// arrRet["hours"]		时间
+// arrRet["minutes"]	分钟
+function ParseCfg(strCfg)
+{
+	write_html_log('**********dssg.html********ParseCfg函数开始strCfg = ' + strCfg);
+	var arrRet = {};
+	var arrValue = new Array();
+	arrValue = strCfg.split(',');
+	if(arrValue.length != 2)
+		return arrRet;
+	
+	arrRet["switch"] = parseInt(arrValue[0]);
+	arrRet["hours"] = parseInt(arrValue[1] / 100);
+	arrRet["minutes"] = parseInt(arrValue[1] % 100);
+	write_html_log('**********dssg.html********ParseCfg函数结束arrRet = ' + arrRet);
+	return arrRet;
+}
+
+// function:设置定时申购定时器
+function SetDssgTimer()
+{
+	write_html_log('**********dssg.html********SetDssgTimer函数开始');
+	var strFilePath = fnFunction("get_modulepath", "") + "RES\\Zyy\\zyy.ini";
+	var strCfg = ReadConfig("dssg_cfg", g_curUserInfo, "", strFilePath);
+	var jsonCfg = ParseCfg(strCfg);
+	if(GetJsonSize(jsonCfg) == 0)
+	{
+		g_cbasdata = 'f_dssg=' + strCfg ;  //用户配置信息 例：1(0),1400
+		UploadLog('SET_TIMER', '-1', '配置读取错误', g_cbasdata, 'DSSG');
+		InitLogData();
+		return;
+	}
+	
+	var nCfgHours = jsonCfg["hours"];
+	var nCfgMinutes = jsonCfg["minutes"];
+	var date = new Date();
+	var nCurrentHours = date.getHours();
+	var nCurrentMinutes = date.getMinutes();
+	var nCurrentSeconds = date.getSeconds();
+	var nInterval = (nCfgHours - nCurrentHours) * 3600 + (nCfgMinutes - nCurrentMinutes) * 60 - nCurrentSeconds;
+	if(nInterval < 0)
+	{
+		nInterval = nInterval + 24 * 3600;
+	}
+	
+	nInterval = nInterval * 1000;
+	
+	var nflag = parseInt(SetTimer(100, nInterval));  //设置定时器回调 1：设置成功  0：失败
+	if ( nflag == 1 )  
+	{
+		//g_cbasdata = 用户配置信息|定时器触发时间(ms为单位)
+		g_cbasdata = "f_dssg=" + strCfg + '|' + 'tt_dssg=' + nInterval;
+		UploadLog("SET_TIMER", '0', '定时器设置成功', g_cbasdata, 'DSSG');
+		InitLogData();
+	}
+	else
+	{
+		//g_cbasdata=用户配置信息
+		g_cbasdata = "f_dssg=" + strCfg;
+		UploadLog("SET_TIMER", '-1', '定时器设置失败', g_cbasdata, 'DSSG');
+		InitLogData();
+	}
+	write_html_log('**********dssg.html********SetDssgTimer函数结束nInterval = ' + nInterval);
+}
+
+// function:定时时间到后自动被调用
+// param:定时器ID
+function fnOnTimer(strTimerId)
+{
+	if (!strTimerId)
+	{
+		strTimerId = "";
+	}
+	write_html_log('**********dssg.html********fnOnTimer函数开始strTimerId = ' + strTimerId);
+	InitData();
+	if(strTimerId == "100")
+	{
+		KillTimer(parseInt(strTimerId));
+		SetTimer(100, 24 * 3600 * 1000);
+		
+		UploadLog('TRIGGER_TIMER', '0', '定时器触发', '', 'DSSG');
+		
+		g_callbackName = 'fn_callback_xgywmarkForDssg';
+		fn_cxXgywMark(g_callbackName);
+	}	
+}
+
+/*************************************************************************
+ *	creator 	: @nwg
+ *	Function	: 定时器查询新股业务标识回调函数，用于判断今日是否为新股申购日并执行申购操作
+ *	Date		：2017-09-28
+ *************************************************************************/
+ 
+ /*  XgywMark字段说明：
+0）业务标志0：不需要页面工作，直接返回
+1）业务标志1：T日
+2）业务标志2，T+1日
+3）业务标志3，既是T日又是T+1日                  
+4）业务标志4，T+2日                  
+5）业务标志5，既是T日又是T+2日
+6）业务标志6，既是T+1日又是T+2日
+7）业务标志7，既是T日又是T+1日又是T+2日 
+*/
+function fn_callback_xgywmarkForDssg (mark_list)
+{
+	if(g_callbackName != "fn_callback_xgywmarkForDssg") return;
+	
+	//计算查业务标识耗时
+	rt_xgyw = Calc_Request_Time();
+		
+	var strdes = fun_str_replace(mark_list);
+	var strToObj = new Function("return" + strdes)();
+	var XgywMark = parseInt(strToObj.reply.xgyw_mark);
+	g_xginfo_support = strToObj.reply.xginfo || '0'; // 是否支持从cxinfo中获取可申购数量 '1',支持 '0',不支持
+	g_ksgsl_request = strToObj.reply.ksgsl_request || 'C';  //可申购数量请求方向，C 或者 L-0-cx_xgsg
+	//获取返回串中的dssg用于判断是否支持定时申购功能，'1',支持，'0', 不支持
+	var qs_dssg_support = parseInt(strToObj.reply.dssg);
+	if (qs_dssg_support == 0)
+	{
+		return;
+	}
+	
+	//g_cbasdata = 查业务标识耗时|当日业务标识
+	g_cbasdata = 'rt_xgyw=' + rt_xgyw + '|' + 'f_xgyw=' + XgywMark;
+	if (XgywMark == 1 || XgywMark == 3 || XgywMark == 5 || XgywMark == 7)
+	{
+		//新股日日志上传
+		UploadLog('XGYWMARK', '0', '业务标识', g_cbasdata, 'DSSG');
+		InitLogData();
+		
+		QueryXgInfo();
+	}
+	else 
+	{
+		//非新股日定时器结束日志上传
+		UploadLog('TIMER_END', '0', '定时器结束', g_cbasdata, 'DSSG');
+		InitLogData();
+	}
+}
+// function:初始化监控日志的数据
+function InitData()
+{
+	g_ReqDest = "0";
+	g_count = 0;	
+	g_retMsg = new Array();
+	g_xginfolog = new Array();	
+	g_xginfolog_ext = new Array();
+	g_xginfolog_ext[0] = "";
+	g_xginfolog_ext[1] = "";
+	g_xginfolog_ext[3] = "";
+	g_xginfolog_ext[8] = "";
+	g_arrErrorInfo = new Array();	
+	g_sgCode = ""; 
+	g_sgCodeIndex = 0;
+
+	var arrUserKey = g_curUserInfo.split('_');
+	g_qsid = arrUserKey[0];	
+	g_xginfolog[5] = g_qsid;
+	g_xginfolog[6] = g_curUserInfo;
+	g_xginfolog[1] = g_pkgver; //PKG版本信息
+	
+	i_xgxx = '';	//查新股请求信息
+	i_xgksg = '';	//查可申购请求信息
+	i_xgysg = '';	//查已申购请求信息
+	i_xgwt = '';	//一键申购委托信息
+	i_dswt = '';	//定时申购委托信息
+	i_xgzh = '';	//股东账户及对应市场的新股
+	i_error = '' ;  	//记录委托的错误信息
+	f_xgyw = '';	//新股业务标识
+	
+	InitLogData();
+	g_req_start = 0;
+}
+
+// function:查询新股信息(客户端创建的定时申购页面需要查询,调用原流程)
+function QueryXgInfo()
+{
+	write_html_log('**********dssg.html********QueryXgInfo函数开始');
+	g_callbackName = "fn_callback_xginfo";
+	fn_cxXgInfo(g_callbackName, "0");	//从券商获取新股信息
+	write_html_log('**********dssg.html********QueryXgInfo函数结束');
+}
+
+// function:设置弹出对话框中显示文本
+function ShowDssgPop()
+{
+	write_html_log('**********dssg.html********ShowDssgPop函数开始');
+	var strCaption = "自动新股申购（账号-" + fnFunction("get_zjzhname", g_curUserInfo) + "-" + fnFunction("get_qsname", g_curUserInfo) + "）";
+	var strContent = "	您今日新股自动申购已完成";
+	ShowPop(strCaption, strContent, "10000", "0", "0", "0");
+	for(var nIndex = 0; nIndex < g_arrayXgInfo.length; nIndex++)
+	{
+		if (g_arrayXgInfo[nIndex][2] == 0 || g_arrayXgInfo[nIndex][2] == '')
+		{
+			continue;
+		}
+		
+		if(g_retMsg[nIndex] == 1)
+		{
+			strContent = g_arrayXgInfo[nIndex][0] + ",已申购数量：" + g_arrayXgInfo[nIndex][2];
+			ShowPop(strCaption, strContent, "10000", "1", "1", "0");
+		}
+		else if (typeof(g_arrErrorInfo[nIndex]) != 'undefined')    //undefined是未发请求的返回错误结果， 避免重复申购结果的显示
+		{
+			strContent = g_arrayXgInfo[nIndex][0] + ",失败：" + g_arrErrorInfo[nIndex]; //重复申购,无权限 等错误
+			ShowPop(strCaption, strContent, "10000", "1", "1", "0");
+		}
+	
+	}
+	write_html_log('**********dssg.html********ShowDssgPop函数结束strContent = ' + strContent);
+}
+
+// function:弹出对话框并设置对话框参数
+// param:对话框参数
+//标题，内容，保持时间，是否增加，顺序，默认样式
+function ShowPop(strCaption, strContent, strStayTime, strIsAppend, strSequence, strDeaultStyle)
+{
+	write_html_log('**********dssg.html********ShowPop函数开始strCaption = ' + strCaption + 'strContent = ' + strContent + 'strStayTime = ' + strStayTime + 'strIsAppend = ' + strIsAppend + 'strSequence = ' + strSequence + 'strDeaultStyle = ' + strDeaultStyle);
+	var jsonParam = {};
+	jsonParam["caption"] = strCaption;
+	jsonParam["content"] = strContent;
+	jsonParam["time_to_stay"] = strStayTime;
+	jsonParam["is_append"] = strIsAppend;
+	jsonParam["is_sequence"] = strSequence;
+	jsonParam["is_defaultstyle"] = strDeaultStyle;
+	jsonParam["font_color"] = "255";
+	jsonParam["font_size"] = "96";
+	jsonParam["line_height"] = "16";
+	jsonParam["font_name"] = "宋体";
+	var strParam = window.JSON.stringify(jsonParam);
+	fnFunction("show_pop", strParam);
+	write_html_log('**********dssg.html********ShowPop函数结束');
+}
+
+// function:申购完成后将状态写入
+function SetCurDssgStatus()
+{
+	write_html_log('**********dssg.html********SetCurDssgStatus函数开始');
+	var strPath = fnFunction("get_modulepath", "") + "RES\\Zyy\\zyy.ini";
+	var strCurDate = new Date();
+	var nCurYear = strCurDate.getFullYear();
+	var nCurMonth = strCurDate.getMonth() + 1;
+	var nCurDay = strCurDate.getDate();
+	var nCurHour = strCurDate.getHours();
+	var nCurMin = strCurDate.getMinutes();
+	var nCurTime = 100 * nCurHour + nCurMin;
+	var strKey = g_curUserInfo + ",last_sg";
+	var strValue = nCurYear + ',' + nCurMonth + ',' + nCurDay + ',' + nCurTime;
+	
+	WriteConfig("dssg_cfg", strKey, strValue, strPath);
+	write_html_log('**********dssg.html********SetCurDssgStatus函数结束');
+}
+
+function GetCurStrTime()
+{
+	var date = new Date();
+	var nHour = date.getHours();
+	var nMin = date.getMinutes();
+	var strTime = nHour + "：" + ((nMin>=10) ? nMin : ('0' + nMin));	
+	return strTime;
+}
+</script>
+	</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,386 @@
+@charset "utf-8";
+
+html{overflow: hidden;}
+body,input,ul,p {margin:0;padding:0;}
+body{font:14px/1.2  "SimSun","WenQuanYi Micro Hei",sans-serif;color:#313131;}
+input,table,tr,td {border:0;}
+input::-ms-clear {display:none;width:0;height:0;}
+table {border-collapse: collapse;border-spacing: 0;}
+ul{list-style: none;}
+a,a:hover,a:active,a:visited {text-decoration: none;}
+td  {   white-space: nowrap;  } 
+
+th{ height:26px; font-weight:normal; }
+.zjgp-table .table-head,.zjgp-table .table-body{ width:100%; }
+.zjzl-zjzh {
+  padding-top: 0px;
+  padding-left: 20px;
+  font-size:13px;
+  font-weight:bold;
+  font-family:'SimSun';
+  color:#3b3b3b;
+  visibility:hidden
+}
+
+.zjzl-time {
+  padding-top:24px;
+  padding-right:10px;
+  font-size:12px;
+  font-family:'SimSun';
+  color:#d9d9d9;
+  text-align:right;
+  visibility:hidden
+}
+
+.zjzl-four-text{
+  padding:5px 5px 5px 20px;
+  font-size:11px;
+  text-align:left;
+  Font-family:'SimSun';
+  font-size:12px
+}
+.zjzl-text{
+  padding:5px 20px 5px 0px;
+  text-align:left;
+  font-family:'SimSun';
+  font-size:14px;
+  color:#ff3b3b
+}
+
+.rect{
+	font-family:verdana;width:99%;border:0px solid #9B9B9B;
+}
+
+.rect-head{
+	font-family:verdana;width:100%;border:0px solid #9B9B9B;
+}
+
+.rect-head-text{
+	font-size:14px;
+	line-height:35px; 
+	vertical-align:middle;
+	margin-left:0px;
+	font-weight:bold;
+	font-family:'SimSun';
+	float:left
+}
+
+.timeswitch ul li{
+	width:40px;
+	font-size:10px; 
+	font-family:'SimSun';
+	text-align:center;
+	cursor:pointer; 
+	color:#5080a3
+}
+.timeswitch ul .cur{background:#d0f7ff; color:#32a0ef;}
+
+#hide-all, #hide-over-stock{
+	position:absolute;
+	left:0px;top:0px;
+	background-color:#ffffff;
+	width:100%;
+	height:410px;
+	filter:alpha(opacity=50);
+	opacity: 0.50;
+	display:none;
+	z-index:99
+}
+
+#load-all{
+	position:absolute;
+	left:0px;top:0px;
+	background-color:#ffffff;
+	width:100%;
+	height:410px;
+	filter:alpha(opacity=50);
+	opacity: 0.50;
+	display:none;
+	z-index:3
+}
+
+.hide-all-text{
+	position:absolute;
+	left:20%;top:45%;
+	font-size:24px;
+	font-weight:normal;
+}
+
+.over-stock{
+	position:absolute;
+	left:10%;top:45%;
+	font-size:24px;
+	font-weight:normal;
+}
+
+.load-all-text{
+	position:absolute;
+	left:35%;top:45%;
+	font-size:24px;
+	font-weight:normal;
+}
+
+.hide-drzjqx-loading{
+	position:absolute;
+	left:25%;top:39%;
+}
+
+.all-loading{
+	position:absolute;
+	left:29%;top:45%;
+	
+}
+
+.hide-drzjqx-tip1{
+	position:absolute;
+	left:22%;top:35%;
+	font-size:18px;
+	font-weight:bold;
+	color:#3b3b3b;
+	font-family:'SimSun';
+}
+
+.hide-drzjqx-tip2{
+	position:absolute;
+	left:33%;top:50%;
+	font-size:18px;
+	font-weight:bold;
+	color:#3b3b3b;
+	font-family:'SimSun';
+}
+
+.hide-drzjqx-lod{
+	position:absolute;
+	left:32%;top:40%;
+	font-size:18px;
+	font-weight:bold;
+	color:#3b3b3b;
+	font-family:'SimSun';
+}
+
+.hide-drzjqx-ldf{
+	position:absolute;
+	left:32%;top:40%;
+	font-size:18px;
+	font-weight:bold;
+	color:#3b3b3b;
+	font-family:'SimSun';
+}
+
+.hide-drzjqx-cnt{
+	position:absolute;
+	left:28%;top:40%;
+	font-size:18px;
+	font-weight:bold;
+	color:#3b3b3b;
+	font-family:'SimSun';
+}
+
+.hide-drzjqx-notspt{
+	position:absolute;
+	left:35%;top:40%;
+	font-size:18px;
+	font-weight:bold;
+	color:#3b3b3b;
+	font-family:'SimSun';
+}
+
+.hide-drzjqx-tip3{
+	position:absolute;
+	left:25%;top:40%;
+	font-size:18px;
+	font-weight:bold;
+	color:#3b3b3b;
+	font-family:'SimSun';
+}
+
+.hide-drzjqx-cancel{
+	position:absolute;
+	left:25%;top:65%;
+	background-color:#ffffff;
+	border:2px solid #404040;
+	font-size:15px;
+	width:90px;
+	height:30px;
+	color:#404040;
+	font-weight:bold;
+	font-family:'SimSun';
+	cursor:pointer;
+}
+
+.hide-retry-cancel{
+	position:absolute;
+	left:25%;top:60%;
+	background-color:#ffffff;
+	border:2px solid #404040;
+	font-size:15px;
+	width:90px;
+	height:30px;
+	color:#404040;
+	font-weight:bold;
+	font-family:'SimSun';
+	cursor:pointer;
+}
+
+.hide-drzjqx-return{
+	position:absolute;
+	left:41%;top:60%;
+	background-color:#ffffff;
+	border:2px solid #404040;
+	font-size:15px;
+	width:90px;
+	height:30px;
+	color:#404040;
+	font-weight:bold;
+	font-family:'SimSun';
+	cursor:pointer;
+}
+
+.hide-drzjqx-yes{
+	position:absolute;
+	left:55%;top:65%;
+	background-color:#ffffff;
+	border:2px solid #404040;
+	font-size:15px;
+	width:90px;
+	height:30px;
+	color:#404040;
+	font-weight:bold;
+	font-family:'SimSun';
+	cursor:pointer;
+}
+
+.hide-retry-yes{
+	position:absolute;
+	left:53%;top:60%;
+	background-color:#ffffff;
+	border:2px solid #404040;
+	font-size:15px;
+	width:90px;
+	height:30px;
+	color:#404040;
+	font-weight:bold;
+	font-family:'SimSun';
+	cursor:pointer;
+}
+
+.hide-get-retry{
+	position:absolute;
+	left:37%;top:60%;
+	background-color:#ffffff;
+	border:2px solid #404040;
+	font-size:15px;
+	width:90px;
+	height:30px;
+	color:#404040;
+	font-weight:bold;
+	font-family:'SimSun';
+	cursor:pointer;
+}
+
+.table-head-center{
+	font-size:12px;
+	font-family:'SimSun',
+	color:#3b3b3b,
+	text-align:center
+}
+
+.table-head-left{
+	font-size:12px;
+	font-family:'SimSun',
+	color:#3b3b3b,
+	text-align:left
+}
+
+.table-head-right{
+	font-size:12px;
+	font-family:'SimSun',
+	color:#3b3b3b,
+	text-align:right
+}
+
+.table-head-none{
+	font-size:12px;
+	font-family:'SimSun',
+	color:#3b3b3b,
+}
+
+#hide-drzjqx, #hide-drzjqx-loading,  #hide-drzjqx-loadfailed, #hide-drzjqx-connectfailed, #hide-drzjqx-notsupport, #hide-drzjqx-getfailed{
+	position:absolute;
+	left:27%;top:0px;
+	background-color:#ffffff;
+	width:72%;
+	height:230px;
+	filter:alpha(opacity=50);
+	opacity: 0.50;
+	display:none;
+	z-index:2
+}
+
+#drzjqx{
+	background-color:#FFFFFF;
+	width:72%;
+	float:right
+}
+
+#content{
+	z-index:1;
+	width:100%
+}
+
+#zjzl{
+	background-color:#FFFFFF;
+	width:27%;
+	float:left;
+}
+
+.img-zhzl{
+	padding:10px 10px 10px 10px;
+	cursor:pointer
+}
+
+.img-zhzl-nopointer{
+	float:left;
+	padding:10px 10px 10px 10px;
+}
+
+.drzjqx-text{
+	font-size:12px;
+	font-family:'SimSun';
+	color:#515050;
+	float:left
+}
+
+#guide{
+	position:absolute;
+	left:0px;top:0px;
+	background-color:#ffffff;
+	width:100%;
+	height:100%;
+	display:none;
+	z-index:999999
+}
+
+.img-iknow{
+	width:150px;
+	height:60px;
+	position:absolute;
+	top:340px;
+	left:490px
+}
+
+::-webkit-scrollbar{
+	width:8px;
+	height:8px;
+	background-color:#f1f1f1
+}
+
+::-webkit-scrollbar-thumb{
+	border-radius:8px;
+	background-color:#c1c1c1
+}
+
+#nav img{ cursor:pointer;}
+#nav li{display:block; line-height:20px;color:#515050;font-size:12px;
+	font-family:'SimSun';width:90px;text-align:center}
+#nav div{position:absolute;right: 38px;top:60px;display:none; border:1px solid #d9d9d9;z-index:999;background-color:#ffffff}

@@ -1,0 +1,419 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="pragma" content="no-cache"> 
+    <meta http-equiv="Cache-Control" content="no-cache, must-revalidate"> 
+    <meta http-equiv="expires" content="Wed, 26 Feb 1997 08:21:57 GMT">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+	<!-[if lte IE8]>
+		<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">
+	<![endif]->
+	<script type="text/javascript" src="../comm/jquery-1.6.1.js"></script> 
+	<script type="text/javascript" src="../comm/jquery.json-2.3-debug.js"></script> 	
+	<script type="text/javascript" src="../comm/hxcomm.js"></script> 
+	<script type="text/javascript" src="../comm/clientAPI.js"></script>
+	<script type="text/javascript" src="./request.js"></script>
+	<script type="text/javascript" src="./sginfo.js"></script> 	
+	<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>     
+
+<div class="container" style="display:block;">
+	<div class="header">
+		<div class="icon-title title-medal"></div>
+		<!-- <div class="icon-title title-nomedal"></div> -->
+		<div class="header-title">恭喜您，中签啦</div>
+	</div>
+	<div class="content">
+		<table class="table">
+			<thead>
+				<tr>
+					<td>申购日期</td>
+					<td>证券名称</td>
+					<td>申购代码</td>
+					<td>发行价格</td>
+					<td>中签数量</td>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<div class="aside">
+		</div>
+	</div>
+	<div class="footer">
+		<div class="btn" onclick="close_page()">确定</div>
+	</div>
+</div>	
+
+<script type="text/javascript">
+window.onerror=function(){return true;} 
+// 证券代码：g_arrayZq[xg_num][0]
+// 证券名称：g_arrayZq[xg_num][1]
+// 中签数量：g_arrayZq[xg_num][2]
+var g_arrayZq = new Array();
+
+/*
+*g_arrayWebphInfo[numIndex][0] 证券代码
+*g_arrayWebphInfo[numIndex][1] 证券名称
+*g_arrayWebphInfo[numIndex][2] 申购代码
+*g_arrayWebphInfo[numIndex][3] 申购价格
+*g_arrayWebphInfo[numIndex][4] 申购日期		  
+*g_arrayWebphInfo[numIndex][5] 中签后几位
+*g_arrayWebphInfo[numIndex][6] 缴款日期
+*/
+var g_arrayWebphInfo = new Array();
+
+/*
+* 客户端的页面请求状态 取值范围:
+*41: 链接新股申购
+*42: 链接中签
+*1 : 当天申购日
+*2 : 没有这种状态
+*3 : 当天中签日
+*4 : 即使中签日又是申购日
+*/
+var g_htmlReqStatus = ""; 
+
+var g_curUserInfo = "";					// 当前用户
+var g_qsid = "";						// 券商ID
+var g_mixSgri = GetDateStr(0);			// 新股列表中最小申购日期
+var g_loginType = 0;					// 用户登录类型
+var g_AccountBalance = 0;
+var curDate = new Date();
+var curHours = curDate.getHours(); 		// 获取当前小时数(0-23)
+var g_showStatus = "";					// 全局变量存放弹框消息的备注内容
+var g_xgzqinfolog = new Array();		// 新股中签日志记录表
+var g_htmlAcessZyyIniFlag = false;		// 支持写zyy.ini，默认不支持
+var g_localDate = '';					// 用户本地日期YYYYMMDD
+var g_clientver = '';					// 客户端版本
+var g_writeZyyIniFlag = '';				// 写zyy.ini函数返回值
+
+fnFunction('set_page_version',g_pkgver.substring(3));// 将页面版本传给客户端
+/************************************************************
+*g_xgzqinfolog[0]			datatype	业务类型调用方式
+*g_xgzqinfolog[1]			pkg版本
+*g_xgzqinfolog[2]			retcode
+*g_xgzqinfolog[3]			retmsg
+*g_xgzqinfolog[4]			cbasdata  字符串
+*g_xgzqinfolog[5]			qsid 
+*g_xgzqinfolog[6]			userkey 
+*************************************************************/
+function SetZijin(str)
+{
+	g_AccountBalance = str;
+}
+
+/*
+* 函数功能说明：
+* 1、页面JS业务流程主入口函数
+* 2、在新股申购页面中，向后台请求web配号
+* 
+*------------------------------------------------------
+* 参数str说明：
+* 格式：参数个数|用户标识（券商Id_用户账号_营业部Id）|请求状态|登录类型
+* 例如：3|90_220500040301_1055|42|0|
+*------------------------------------------------------
+*步骤说明:
+*数据处理：解析入口参数和数据，获取请求需要的各种参数
+*逻辑处理：组织请求
+*动作：发送请求(查询web配号)
+*/
+function fnStart(str)
+ {
+	fnFunction("set_caption", '提示');
+	fnFunction("chg_dlgsize", 'nType=0\nwidth=680\nheight=450\n');
+	fnFunction("hide_dlg", '');
+	write_html_log('fnStart:' + str);
+	var array_param = new Array();
+	array_param = str.split('|');
+	if(array_param.length < 3)
+	{
+		return;
+	}
+	g_curUserInfo = array_param[1];
+	g_htmlReqStatus = array_param[2];
+	if (g_curUserInfo.length > 3)
+	{
+		var array_user = new Array();
+		array_user = g_curUserInfo.split('_');
+		g_qsid = array_user[0];
+		g_xgzqinfolog[1] = g_pkgver;
+		g_xgzqinfolog[5] = g_qsid;
+		g_xgzqinfolog[6] = str;
+		
+		var login_type = array_param[3];
+		if(login_type != undefined && login_type != "")
+		{
+			g_loginType = parseInt(login_type);
+			write_html_log('fnStart: 当前用户登录类型:' + g_loginType);
+		}
+		
+		g_clientver = fnFunction("get_xiadan_version", "");	//获取客户端版本
+		g_htmlAcessZyyIniFlag = IsClientVersionSupport('html_support_zyyini', g_clientver);
+		g_localDate = GetDateStr(0);
+		var xiadanLockStatus = fnFunction('get_lock_status');	//查询锁屏状态
+		
+		if(xiadanLockStatus == '1')	//返回为'1',锁屏状态
+		{
+			//UploadLog('ZDTC', '-1', '新股中签锁屏状态', '','ZQ');
+			fnFunction('set_reload_on_unlock','1');	//解锁后再次调用页面
+			return;
+		}
+		
+		if(g_htmlAcessZyyIniFlag)
+		{
+			var ini_date = ReadConfig(g_curUserInfo, g_htmlReqStatus, '', 'RES/Zyy/zyy.ini');
+			if(ini_date == g_localDate)	//今天已自动调用页面
+			{
+				//UploadLog('ZDTC', '-1', '中签页面已自动调用', '','ZQ');
+				return;
+			}
+			var curDate = new Date();
+			var curHours = curDate.getHours(); 		// 获取当前小时数(0-23)
+			if(curHours >= 0 && curHours < 15)
+			{
+			}
+		}
+		//初始化request.js文件的全局变量
+		//fn_glocalInit(g_curUserInfo,g_qsid,g_loginType);
+		
+		fn_cxWebph("fn_callback_webPh");
+	}
+}
+
+/*
+* 函数功能说明：
+* 1、查询web配号的回调函数
+* 2、向后台请求中签信息
+* 
+*------------------------------------------------------
+*步骤说明:
+*数据处理：解析入口参数和数据，
+*逻辑处理：判断如果中签日期 为今天的， 则将数据存在g_arrayWebphInfo中
+*动作：发送请求(查询中签信息)
+*/
+g_xginfolog_ext[6] = '';	//查用户配号请求数据
+g_xginfolog_ext[7] = '';	//查用户配号返回数据
+function fn_callback_webPh(xg_list)
+ {
+	write_html_log('中签:' + xg_list);
+	var array_webphList = parse_webxgph(g_qsid, xg_list, g_curUserInfo)
+	write_html_log('***解析以后的数据中签查询getpeihao()webph data:' + array_webphList.length);
+	var numIndex = 0;
+	for (var i = 0; i < array_webphList.length; i++)
+	{
+		var zqri = array_webphList[i][6]; 
+		zqri = zqri.replace(/[^0-9]/g, '');
+		if (parseInt(GetDateStr(0)) == parseInt(zqri)) 
+		{
+			g_arrayWebphInfo[numIndex] = new Array();
+			g_arrayWebphInfo[numIndex][0] = array_webphList[i][0]; // 证券代码
+			g_arrayWebphInfo[numIndex][1] = array_webphList[i][1]; // 证券名称
+			g_arrayWebphInfo[numIndex][2] = array_webphList[i][2]; // 申购代码
+			g_arrayWebphInfo[numIndex][3] = array_webphList[i][3]; // 申购价格
+			g_arrayWebphInfo[numIndex][4] = array_webphList[i][4]; // 申购日期
+			  
+			g_mixSgri = (g_mixSgri > g_arrayWebphInfo[numIndex][4]) ? g_arrayWebphInfo[numIndex][4] : g_mixSgri;
+			g_arrayWebphInfo[numIndex][5] = array_webphList[i][5]; // 中签后几位
+			g_arrayWebphInfo[numIndex][6] = array_webphList[i][6]; // 缴款日期
+			g_arrayWebphInfo[numIndex]['peihaoStatus'] = 0;
+			numIndex ++;
+		}
+	}
+
+	fn_cxZq("fn_callback_zq");
+}
+
+/*
+* 函数功能说明：
+* 1、查询中签信息的回调函数
+* 2、根据中签信息，决定是展示页面，还是查询相关配号
+* 
+*------------------------------------------------------
+*步骤说明:
+*数据处理：	解析入口参数和数据，
+*逻辑处理：	如果中签信息存在，则展示页面，如果中签信息不存在则取当前用户的相关配号
+			判断该用户是否申购过该股票，如果申请过，则提示未中签，如果未申请过则什
+			么都不显示
+*动作：显示页面或者查询相关配号
+*/
+function fn_callback_zq(zqParam)
+{
+	write_html_log(zqParam);
+	g_arrayZq = parse_zqmx(g_qsid, zqParam, g_curUserInfo);
+	write_html_log('解析中签列表长度为:' + g_arrayZq.length);
+	var startDate = g_mixSgri.replace(/-/g, '');
+	
+	if(g_arrayZq.length > 0)		//用户中签
+	{
+		fn_showZqHtml();
+	}
+	else 							//用户未中签
+	{
+		if(g_htmlAcessZyyIniFlag)	//支持写zyy.ini
+		{	
+			UploadLog('ZDTC', '-1', '未中签', '', 'ZQ');
+			InitLogData();
+			var write_flag = WriteConfig(g_curUserInfo, g_htmlReqStatus, g_localDate, 'RES/Zyy/zyy.ini');
+		}
+	}
+}
+
+var g_initDlg = 0;
+
+/*
+* 函数功能说明：
+* 关闭页面
+*/
+function close_page() 
+{
+	fnFunction("close_dlg_ex", '');
+}
+
+var showDlgStatus = 0;
+/*
+* 函数功能说明：
+* 展示页面
+*步骤:
+*1.根据之前几步查到的信息，判断该用户的情况，赋值给g_curUserSg_status
+*2.根据g_curUserSg_status的不同展示相应的页面
+*/
+function fn_showZqHtml()
+{
+	if(g_initDlg > 0)
+	{
+		return ;
+	}
+	g_initDlg = 1;
+	var zqStatus = 0;
+	var zqNeedMoney = 0;
+	var zqinfo = "i_zq=";		//中签股票信息
+	// 多只新股循环
+	for(var i = 0; i < g_arrayZq.length; i++)
+	{
+		for(var j = 0; j < g_arrayWebphInfo.length; j++)
+		{
+			if(g_arrayZq[i][0] == g_arrayWebphInfo[j][2])
+			{
+				//g_arrayWebphInfo[numIndex][1] 证券名称
+				//g_arrayWebphInfo[numIndex][2] 申购代码
+				//g_arrayWebphInfo[numIndex][3] 申购价格
+				//g_arrayZq[i][2]				中签数量
+				//g_arrayWebphInfo[numIndex][4] 申购日期
+				
+				//if(g_qsid == 59 && g_arrayZq[i][3] != parseInt(GetDateStr(0)))
+				//{
+				//	continue;			// 如果是平安证券判断中签日期是不是今天
+				//}
+				var htmlContent = '<tr>';
+				htmlContent += '<td >' + g_arrayWebphInfo[j][4] +'</td><td>'+ g_arrayWebphInfo[j][1] +'</td><td>' + g_arrayWebphInfo[j][2] + '</td>';
+				htmlContent += '<td >' + g_arrayWebphInfo[j][3] +'</td><td class="cr">'+ g_arrayZq[i][2] +'</td>';
+				htmlContent += '</tr>';
+				$("tbody").append(htmlContent);
+				if(zqinfo.length > 5) 
+				{
+					zqinfo += "|";
+				}
+				zqinfo += g_arrayWebphInfo[j][4] + "_" + g_arrayWebphInfo[j][1] + "_" + g_arrayWebphInfo[j][2] + "_" + g_arrayWebphInfo[j][3] + "_" + g_arrayZq[i][2]; 
+				zqNeedMoney += g_arrayWebphInfo[j][3] *  g_arrayZq[i][2];
+				zqStatus = 1;
+				break;
+			}
+			else
+			{
+				//新股相关代码关联关系
+				var codeCompare = 0;
+				if(g_arrayWebphInfo[j][2].substr(0, 3) == '730' && g_arrayZq[i][0].substr(0, 3) == '741')
+				{
+					codeCompare = 1;
+				}
+				if(g_arrayWebphInfo[j][2].substr(0, 3) == '732' && g_arrayZq[i][0].substr(0, 3) == '736')
+				{
+					codeCompare = 1;
+				}
+				if(g_arrayWebphInfo[j][2].substr(0, 3) == '780' && g_arrayZq[i][0].substr(0, 3) == '791')
+				{
+					codeCompare = 1;
+				}
+				if(codeCompare)
+				{
+					if(g_arrayZq[i][0].substr(3, 3) == g_arrayWebphInfo[j][0].substr(3, 3))
+					{
+					
+						//if(g_qsid == 59 && g_arrayZq[i][3] != parseInt(GetDateStr(0)))
+						//{
+						//	continue;			// 如果是平安证券判断中签日期是不是今天
+						//}
+						var htmlContent = '<tr>';
+						htmlContent += '<td >' + g_arrayWebphInfo[j][4] +'</td><td>'+ g_arrayWebphInfo[j][1] +'</td><td>' + g_arrayWebphInfo[j][2] + '</td>';
+						htmlContent += '<td >' + g_arrayWebphInfo[j][3] +'</td><td class="cr">'+ g_arrayZq[i][2] +'</td>';
+						htmlContent += '</tr>';
+						$("tbody").append(htmlContent);
+						zqNeedMoney += g_arrayWebphInfo[j][3] *  g_arrayZq[i][2];
+						if(zqinfo.length > 5) 
+						{
+							zqinfo += "|";
+						}
+						zqinfo += g_arrayWebphInfo[j][4] + "_" + g_arrayWebphInfo[j][1] + "_" + g_arrayWebphInfo[j][2] + "_" + g_arrayWebphInfo[j][3] + "_" + g_arrayZq[i][2]; 
+						zqStatus = 1;
+						break;
+					}
+				}
+			}
+			
+		}
+	}
+	if(g_ajaxVer)
+	{
+		fnGetAccountBalance();
+		var needMoney = '<td colspan="3" class="table-conclusion1"><span>申请所需金额：</span><span class="text-bigger">'+zqNeedMoney+'</span></td>';
+		var haveMoney = '<td colspan="2" class="table-conclusion2"><span>您的账户余额：</span><span class="text-bigger">'+g_AccountBalance+'</span><span class="icon icon-ok"></span></td>';
+
+	}
+	$("tbody").append('<tr>' + needMoney + haveMoney + '</tr>');
+	$(".aside").append('<p><span class="cr">注：</span>请在闭市前留有足够金额！</p>');
+	
+	if (!(g_htmlReqStatus == '4' || g_htmlReqStatus == '3')) 
+	{
+		showDlgStatus = 0;
+		
+	}
+	//中签自动弹出
+	g_cbasdata = zqinfo;
+	if((g_htmlReqStatus == '4' || g_htmlReqStatus == '3') && g_arrayZq.length > 0 && curHours >= 0 && curHours < 15 && zqStatus == 1)
+	{
+		showDlgStatus = 1;
+		g_showStatus = "2";
+		
+		UploadLog('ZDTC', '0', '中签', g_cbasdata , 'ZQ');
+		InitLogData();
+		
+	}
+	else if((g_htmlReqStatus == '4' || g_htmlReqStatus == '3') && g_arrayZq.length > 0 && curHours >= 15 && curHours <= 23 && zqStatus == 1)
+	{
+		UploadLog('ZDTC', '-1', '当前时间不在交易时间之内', g_cbasdata , 'ZQ');
+		InitLogData();
+	}
+	//点击运营位弹出
+	if (g_htmlReqStatus == '43' && curHours >= 0 && curHours < 15) 
+	{
+		showDlgStatus = 1;
+	}
+
+	if (showDlgStatus) 
+	{
+		if(g_htmlAcessZyyIniFlag)
+		{
+			var write_flag = WriteConfig(g_curUserInfo, g_htmlReqStatus, g_localDate, 'RES/Zyy/zyy.ini');
+		}
+
+		fnFunction("show_dlg", g_showStatus);
+	}
+	
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,57 @@
+/* 遮罩层 */
+.mask_layer {
+	position: fixed;
+	z-index: 100;
+	top: 0px;
+	left: 0px;
+	height: 100%;
+	width: 100%;
+	
+	background-color: black;
+	filter: alpha(opacity=75);
+	-moz-opacity: 0.75;
+	opacity: 0.75;
+}
+
+/* 弹出对话框整体层 */
+.modal_dialog {
+	position:relative;
+	left:200px;
+	top:200px;
+	width:200px;
+	height:200px;
+	background-color:#ECF3F6;
+	z-index:101;
+	
+	font-size:12px;
+	border:4px #202239 solid;
+}
+
+/* 窗体标题 */
+.win_caption {
+	padding-left:15px;
+	padding-top:4px;
+	padding-bottom:4px;
+	font-size:14px;
+	font-weight:bold;
+}
+
+/* 窗体内容 */
+.win_body {
+	padding:4px;
+	margin-left:15px;
+	margin-right:15px;
+	border: 1px #D1D1D1 solid;
+	overflow:auto;
+	text-indent: 2em;
+}
+
+/* 按钮层 */
+.win_buttons {
+	margin:4px;
+}
+
+/* 窗体底边 */
+.win_bottom {
+	height:10px;
+}

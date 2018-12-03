@@ -1,0 +1,819 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="pragma" content="no-cache"> 
+    <meta http-equiv="Cache-Control" content="no-cache, must-revalidate"> 
+    <meta http-equiv="expires" content="Wed, 26 Feb 1997 08:21:57 GMT">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+	<!-[if lte IE8]>
+		<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">
+	<![endif]->
+	<script type="text/javascript" src="../comm/jquery-1.6.1.js"></script> 
+	<script type="text/javascript" src="../comm/jquery.json-2.3-debug.js"></script> 	
+	<script type="text/javascript" src="../comm/hxcomm.js"></script> 
+	<script type="text/javascript" src="../comm/clientAPI.js"></script>
+	<script type="text/javascript" src="./request.js"></script>
+	<script type="text/javascript" src="./sginfo.js"></script> 
+	<script type="text/javascript" src="js/search.js"></script>
+	<script type="text/javascript" src="http://s.thsi.cn/js/ta.min.20120320.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+		
+	
+
+<body>    
+<div class = "QRcode" id = "QRcode" onclick = fnOnclickQRcode();> </div>
+		<div class = "tips" id = "tips" onclick = fnOnclicktips();> </div>
+		<div class = "QRcodeMainCloseBtn" id = "QRcodeMainCloseBtn" onclick = fnOnclickCloseQRcodeMain(); > </div>
+		<div class = "QRcodeMain" id = "QRcodeMain"  tabIndex="1"> </div>
+	<!-- 查询 -->
+	<div class="container showHtml" id="search">
+		<div class="header">
+			<div class="icon-title title-medal"></div>
+			<div class="header-title">中签预查询</div>
+		</div>
+		<div class="content-search">
+			<div class="form clearfix">
+				<div class="form-group">
+					<div class="form-group-title">证券代码/证券名称</div>
+					<div class="form-group-select">
+					
+						<span class="fl" id="input-code" index = "0" ></span><span class="icon icon-select"></span>
+						<ul class="form-group-options" style="display: none;">
+					</ul>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="form-group-title"><span class="fl">起始配号</span><span class="icon icon-warnYcx" id="input-num-content-warn"></span></div>
+					<div class="form-group-input"> 
+						<input id="input-num-content" type="text" value="disabled" disabled />
+					</div>
+				</div>
+				<div class="form-group form-group-last">
+					<div class="form-group-title"><span class="fl">配号数量</span><span class="icon icon-warnYcx" id="input-num-account-warn"></span></div>
+					<div class="form-group-input">
+						<input id="input-num-account" type="text" value="disabled" disabled />
+					</div>
+				</div>
+			</div>
+			<div class="btn btn-ban" id="btn-search" onclick="fn_chaXun()">查询</div>
+			<!-- <div class="btn">查询</div> -->
+			<div class="aside">
+				<div class="aside-section">
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="container hideHtml" id="result">
+	<div class="header">
+		<div class="icon-title title-medal"></div>
+		<div class="header-title">恭喜您，中签啦</div>
+	</div>
+	<div class="content">
+		<table class="table">
+			<thead>
+				<tr>
+					<td>申购日期</td>
+					<td>证券名称</td>
+					<td>申购代码</td>
+					<td>发行价格</td>
+					<td>中签数量</td>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<div class="aside">
+		<p><span class="cr">注</span>预测中签,仅供参考</p>
+		</div>
+	</div>
+	<div class="footer">
+		<div class="btn" onclick="close_page()">确定</div>
+	</div>
+</div>	
+<script type="text/javascript">
+window.onerror=function(){return true;} 
+$(document).ready(function(){
+	 $('.form-group-select span').click(function(){ //鼠标移动函数
+
+	  $(this).parent().find('ul.form-group-options').slideDown();  
+	  $(this).parent().find('ul li').hover(function(){$(this).addClass('hover')},function(){$(this).removeClass('hover')}); 
+	  $(this).hover(function(){},
+							 function(){
+								 $(this).find("ul.form-group-options").slideUp(); 
+								 }
+							 );
+	   $('ul.form-group-options li').click(function(){
+			var lihtml = $(this).html();
+			setPromptToHtml(lihtml);
+			 $("#input-code").html(lihtml);
+			 $('#input-code').attr("index", $(this).index());
+			 setInfoToHtml($(this).index());
+			 $(this).parent().slideUp();
+	   });
+	  }
+	  );
+	  $('.form-group-select').mouseleave(function(){	//离开控件收起下拉框
+		$(this).parent().find('ul.form-group-options').slideUp(); 
+	  })
+	 }
+ );
+
+ // 设置提示信息显示到页面
+ function setPromptToHtml(str)			
+ {
+	if(!str)
+	{
+		return;
+	}
+	var arr = str.substring(0, 6);
+	var mark = 0;
+	for(var i = 0; i < g_arrayWebphInfo.length; i++)
+	{
+		if(g_arrayWebphInfo[i][0] == arr)
+		{
+			mark = i;
+		}
+		
+	}
+	var zqwNotice = "";
+	array_peihaoList = fn_peihaoValueFormat(g_arrayWebphInfo[mark][5]);
+	for (var i = 0; i < array_peihaoList.length; i++) 	
+	{
+		var result = array_peihaoList[i];
+		if (result.length > 1) {
+			var notice = '末“' + result[0] + '”位数: ';
+			for (var j = 1; j < result.length; j++) {
+				if (j != result.length - 1) {
+					notice = notice + result[j] + '，';
+				} else {
+					notice = notice + result[j];
+				}
+			}
+			if("" == zqwNotice) 
+			{
+				zqwNotice += '<p><span class="cr">注：</span>' + notice + '</p>';
+			}else{
+				zqwNotice += '<p>' + notice + '</p>';
+			}
+			
+		}
+	}
+	$(".aside-section").text("");
+	$(".aside").css("width","100%");
+	$(".aside").css("padding-left","25px");
+	$(".aside").html(zqwNotice);
+	$(".cr").css("margin-left", "-25px");
+ }
+ 
+ 
+// 关闭查询中签结果页面
+function close_page()
+{
+	var search= document.getElementById("search");
+	search.className = search.className.replace("hideHtml","showHtml");
+	
+	var result= document.getElementById("result");
+	result.className = result.className.replace("showHtml","hideHtml");
+}
+/*
+*g_arrayWebphInfo[numIndex][0] 证券代码
+*g_arrayWebphInfo[numIndex][1] 证券名称
+*g_arrayWebphInfo[numIndex][2] 申购代码
+*g_arrayWebphInfo[numIndex][3] 申购价格
+*g_arrayWebphInfo[numIndex][4] 申购日期		  
+*g_arrayWebphInfo[numIndex][5] 中签后几位
+*g_arrayWebphInfo[numIndex][6] 缴款日期
+*/
+var g_arrayWebphInfo = new Array();
+
+/*
+ *g_arrayInitialpeihaoValue[xg_num][0] 证券代码
+ *g_arrayInitialpeihaoValue[xg_num][1] 起始配号
+ *g_arrayInitialpeihaoValue[xg_num][2] 成交笔数
+*/
+var g_arrayInitialpeihaoValue = new Array();	
+
+/*
+* 客户端的页面请求状态 取值范围:
+*41: 链接新股申购
+*42: 链接中签
+*1 : 当天申购日
+*2 : 没有这种状态
+*3 : 当天中签日
+*4 : 即使中签日又是申购日
+*/
+var g_htmlReqStatus = "";
+					
+var g_curUserInfo = "";						// 当前用户信息
+var g_qsid = "";							// 券商ID
+var g_loginType = 0;						// 用户登录类型
+var g_AccountBalance = 0;
+var g_showStatus = "3";						// 全局变量存放弹框消息的备注内容，预查询状态为3
+var g_xgycxlog = new Array();						//新股日志记录表
+var g_pageinfo = "cxjm";					//当前页面信息， 默认为查询明细
+var g_htmlAcessZyyIniFlag = false;			// 支持写zyy.ini，默认不支持
+var g_xiadanAcessUnlockFlag = false;		// 下单客户端支持解锁，默认不支持
+var g_localDate = '';						// 用户本地日期YYYYMMDD
+var g_clientver = '';						// 客户端版本
+
+fnFunction('set_page_version',g_pkgver.substring(3));	// 将页面版本传给客户端
+/************************************************************
+*g_xgycxlog[0]			datatype	业务类型调用方式
+*g_xgycxlog[1]			pkg版本
+*g_xgycxlog[2]			retcode
+*g_xgycxlog[3]			retmsg
+*g_xgycxlog[4]			cbasdata  字符串
+*g_xgycxlog[5]			qsid 
+*g_xgycxlog[6]			userkey 
+*************************************************************/
+function SetZijin(str)
+{
+	g_AccountBalance = str;
+}
+
+/*
+* 函数功能说明：
+* 1、页面JS业务流程主入口函数
+* 2、在新股申购页面中，向后台请求web配号
+* 
+*------------------------------------------------------
+* 参数str说明：
+* 格式：参数个数|用户标识（券商Id_用户账号_营业部Id）|请求状态|登录类型
+* 例如：3|90_220500040301_1055|42|0|
+*------------------------------------------------------
+*步骤说明:
+*数据处理：解析入口参数和数据，获取请求需要的各种参数
+*逻辑处理：组织请求
+*动作：发送请求(查询web配号)
+*/
+function fnStart(str) 
+{
+	document.onclick = CloseQRcodeMain;
+	fnFunction("hide_dlg", '');
+	fnFunction("set_caption", '中签预查询');
+	fnFunction("chg_dlgsize", 'nType=0\nwidth=680\nheight=450\n');
+
+	write_html_log('中签预查询fnStart:' + str);
+	var array_param = new Array();
+	array_param = str.split('|');
+	if (array_param.length < 3) 
+	{
+		write_html_log('中签预查询fnStart传过来参数有误:' + str);
+		return;
+	}
+	g_curUserInfo = array_param[1];
+	var user_sjtsinfo = fnGetConfigData('SJTS',g_curUserInfo,'');  //获取xiadian.ini文件SJTS节点下的值
+	if (user_sjtsinfo == '')  //若值为空，则展示tips
+	{
+		//document.getElementById("tips").style.display = "block"; // 20171018倪维国
+	}
+	g_htmlReqStatus = array_param[2];
+	if (g_curUserInfo.length > 3) 
+	{
+		var array_user = new Array();
+		array_user = g_curUserInfo.split('_');
+		g_qsid = array_user[0];
+		//新股日志记录表
+		g_xgycxlog[5] = g_qsid; 
+		g_xgycxlog[6] = str;
+		g_xgycxlog[1] = g_pkgver; 
+		
+		g_clientver = fnFunction("get_xiadan_version", "");	//获取客户端版本
+		g_htmlAcessZyyIniFlag = IsClientVersionSupport('html_support_zyyini', g_clientver);
+		g_xiadanAcessUnlockFlag = IsClientVersionSupport('xiadan_support_unlock', g_clientver);
+		g_localDate = GetDateStr(0);
+		
+		var xiadanLockStatus = fnFunction('get_lock_status');	//查询锁屏状态
+		var unlockFlag = '';	//解锁标志 '0'解锁失败
+		if(xiadanLockStatus == '1')	//返回为'1',锁屏状态
+		{
+			unlockFlag = fnFunction('lock_operate', 'unlock');	//解锁
+			if(unlockFlag == '0')	//解锁失败
+			{
+				//UploadLog('DJYYW', '-1', '新股预查询解锁失败', '', 'YCX');
+				return;
+			}	
+		}
+		var login_type = array_param[3];
+		if(login_type != undefined && login_type != "")
+		{
+			g_loginType = parseInt(login_type);
+			write_html_log('fnStart: 当前用户登录类型:' + g_loginType);
+		}
+		
+		//初始化request.js文件的全局变量
+		//fn_glocalInit(g_curUserInfo,g_qsid,g_loginType);
+		
+		//查询web_peihao
+		fn_cxWebph("fn_callback_webPh");
+	} else 
+	{
+		write_html_log('中签预查询fnStart用户参数有误:' + g_curUserInfo);
+	}
+}
+
+var g_mixSgri = GetDateStr(0);					// 新股列表中最小申购日期
+/*
+* 函数功能说明：
+* 1、查询webph的回调函数
+* 2、向后台请求中签信息
+* 
+*------------------------------------------------------
+*步骤说明:
+*数据处理：解析入口参数和数据，
+*逻辑处理：判断如果中签日期 为今天的， 则将数据存在g_arrayWebphInfo中
+*动作：发送请求(查询中签信息)
+*/
+g_xginfolog_ext[6] = '';	//查用户配号请求数据
+g_xginfolog_ext[7] = '';	//查用户配号返回数据
+function fn_callback_webPh(getpeihaoValuestr) 
+{
+	write_html_log('中签预查询getpeihaoValue():' + getpeihaoValuestr);
+	var array_webphList = parse_webxgph(g_qsid, getpeihaoValuestr, g_curUserInfo);	
+	write_html_log('解析以后的数据中签预查询getpeihaoValue()webph data:' + array_webphList.length);
+	if(array_webphList.length ==0) return;
+	var j = 0 ;
+	for (var i = 0; i < array_webphList.length; i++) 
+	{
+		var sgri = array_webphList[i][4];
+		var zqri = array_webphList[i][6];
+		sgri = sgri.replace(/[^0-9]/g, '');
+		zqri = zqri.replace(/[^0-9]/g, '');
+		var sgrq_flag = (parseInt(GetDateStr(0)) > parseInt(sgri)) && (parseInt(GetDateStr(0)) < parseInt(zqri));
+		var zqh = array_webphList[i][5];
+		if (sgrq_flag && zqh.length > 0) 
+		{
+			g_arrayWebphInfo[j] = new Array();
+			g_arrayWebphInfo[j][0] = array_webphList[i][0]; 	// 证券代码
+			g_arrayWebphInfo[j][1] = array_webphList[i][1]; 	// 证券名称
+			g_arrayWebphInfo[j][2] = array_webphList[i][2]; 	// 申购代码
+			g_arrayWebphInfo[j][3] = array_webphList[i][3]; 	// 申购价格
+			g_arrayWebphInfo[j][4] = array_webphList[i][4]; 	// 申购日期
+			g_mixSgri = (g_mixSgri > g_arrayWebphInfo[j][4]) ? g_arrayWebphInfo[j][4] : g_mixSgri;
+			g_arrayWebphInfo[j][5] = zqh; 						// 中签后几位
+			g_arrayWebphInfo[j][6] = array_webphList[i][6]; 	// 缴款日期
+			j++;
+		} //if
+	} //for
+	var startDate = g_mixSgri.replace(/-/g, '');			// 查询用户的起始配号
+	fn_cxUserPh("fn_callback_UserPeihao",startDate);
+
+}
+
+/*
+* 函数功能说明：
+* 1、查询当前用户相关配号的回调函数
+* 2、将获取数据，存在g_arrayInitialpeihaoValue
+* 
+*------------------------------------------------------
+*步骤说明:
+*数据处理：	解析入口参数和数据，
+*/
+function fn_callback_UserPeihao(getpeihaoValuestr) 
+{
+
+	// 东海配号问题，有配号数量没有配号
+	write_html_log('中签预查询fn_callback_UserPeihao() data:' + getpeihaoValuestr);
+	var array_xgpeihaoValue = parse_xgph(g_qsid, getpeihaoValuestr, g_curUserInfo);
+	var colon_index = 0;
+	var qsph = "";
+	for(var index = 0; index < array_xgpeihaoValue.length; index++)
+	{
+		g_arrayInitialpeihaoValue[index] = new Array();
+		g_arrayInitialpeihaoValue[index][0] = array_xgpeihaoValue[index][0];	// 证券代码
+		g_arrayInitialpeihaoValue[index][1] = array_xgpeihaoValue[index][1];	// 起始配号
+		qsph = g_arrayInitialpeihaoValue[index][1];			
+		colon_index = qsph.indexOf(':');	//起始配号由':'分隔符分隔
+		g_arrayInitialpeihaoValue[index][1] = qsph.substring(colon_index + 1);
+		// 平安等证券，配号查询列"成交数量"取值错误问题 20170519 增加券商143,302
+		if(g_qsid == '33' || g_qsid == '57' || g_qsid == '59' || g_qsid == '83' || g_qsid == '143' || g_qsid == '302' || g_qsid == '347')
+		{
+			var sc = (array_xgpeihaoValue[index][0]).toString().charAt(0);			// 股票代码的第一位数字
+			
+			if(parseInt(sc) == 3 || parseInt(sc) == 0)			// 3,0开头的是深圳市场
+			{
+				array_xgpeihaoValue[index][2] = array_xgpeihaoValue[index][2] / 500; 
+				array_xgpeihaoValue[index][2] = array_xgpeihaoValue[index][2].toString();
+			}
+			else			// 如果是上海市场
+			{
+				array_xgpeihaoValue[index][2] = array_xgpeihaoValue[index][2] / 1000; 
+				array_xgpeihaoValue[index][2] = array_xgpeihaoValue[index][2].toString();
+			}
+		}
+		g_arrayInitialpeihaoValue[index][2] = array_xgpeihaoValue[index][2];	// 配号数量
+	}	
+	write_html_log('fn_callback_UserPeihao() 起始配号解析以后的起始配号数字长度：' + g_arrayInitialpeihaoValue.length + '  webph数据长度：' + g_arrayWebphInfo.length);
+	
+	if (g_arrayWebphInfo.length > 0) 
+	{ 
+		fn_showSgHtml();
+	} else 
+	{
+		write_html_log('配号预查询初始化函数没有执行');
+	}
+}
+
+/*
+* 函数功能说明：
+* 解析中签位字符串,将中签位字符串，解析为key为中签位数，value为中签号的数组 
+*/
+function fn_peihaoValueFormat(perihao_str) 
+{
+	var array_numIndex = new Array('零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一');
+	var array_returnList = new Array();
+	var array_tempList = new Array();
+	for (var i = 0; i < array_numIndex.length; i++) 
+	{
+		array_returnList[i] = new Array();
+		array_tempList[i] = 1;
+	}
+
+	var array_peihaoValueList = new Array();
+	array_peihaoValueList = perihao_str.split('_');
+	for (var i = 0; i < array_peihaoValueList.length; i++) 
+	{
+		if (array_peihaoValueList[i].length < 12) 
+		{
+			array_returnList[array_peihaoValueList[i].length][0] = array_numIndex[array_peihaoValueList[i].length];
+			array_returnList[array_peihaoValueList[i].length][array_tempList[array_peihaoValueList[i].length]] = array_peihaoValueList[i];
+			array_tempList[array_peihaoValueList[i].length]++;
+		}
+	}
+	return array_returnList;
+}
+
+/*
+*函数功能说明:
+* 参数1如果不含参数b，则在最大数组下标下，增加参数b
+*/
+function fn_uniqueAdd(a, b) 
+{
+	for (var num = 0; num <= a.length; num++) 
+	{
+		if(a[num] == b)
+		{
+			return a;
+		}
+	}
+	a[a.length] = b;
+	return a;
+}
+
+/*
+	函数功能:查询是否中签,并展示中签结果
+	步骤:
+	1.获取当前页面上显示的股票相关信息
+	2.根据获取信息的起始配号和web配号中的中签位比较，得出是否中签，中签数量
+	3.展示相应页面
+*/
+function fn_chaXun()
+ {
+	var zqNotice = "";				// 中签提醒内容
+	var zqCount = 0;				// 中签数量
+	var zqCode = "";				// 中签股票代码
+	var zqDate = "";				// 中签股票日期
+	var zqcodeName = "";			// 中签股票名称
+	var zqCodeprice = "0";         	// 中签股票价格
+	
+	
+	
+	// 获取界面数据
+	var codeNameIndex = parseInt($('#input-code').attr("index").replace(/[^\d]/g,''));
+	var peihaoValue = parseInt($('#input-num-content').val()); //取整比较
+	var numValue = parseInt($('#input-num-account').val().replace(/[^\d]/g,'').substring(0,4));
+
+	var isZq = 0;
+	var array_zqCode = new Array();
+	if(isNaN(peihaoValue) || isNaN(numValue))
+	{
+		return;
+	}
+
+	// 查询是否中签
+	// 中签判断错误问题
+	for (var num = 0; num < numValue; num++)
+	{  
+		var peihaoValue_temp = peihaoValue + num;     
+		var array_peihaoValue = new Array();  
+		array_peihaoValue = g_arrayWebphInfo[codeNameIndex][5].split('_');
+
+		for (var i = 0; i < array_peihaoValue.length; i++)   
+		{
+			var strTemp = peihaoValue_temp.toString();
+			var src_str = strTemp.split("").reverse().join("");
+			var des_str = array_peihaoValue[i].split("").reverse().join("");
+			if (src_str.indexOf(des_str) == 0)
+			{
+				array_zqCode = fn_uniqueAdd(array_zqCode, array_peihaoValue[i]);
+				isZq++;
+			}
+		}
+	}
+	
+	for (var i = 0; i < array_zqCode.length; i++)
+	{
+		if(i != 0)
+		{
+			zqCode = zqCode + ';' + array_zqCode[i];
+		}
+		else
+		{
+			zqCode = array_zqCode[i];
+		}
+	}
+	// 中签数量
+	var shichang = g_arrayWebphInfo[codeNameIndex][0].substr(0,1);
+	if(shichang == '0' || shichang == '3')
+	{// 深圳市场
+		zqCount = isZq*500;
+	}else
+	{
+		zqCount= isZq*1000;
+	}
+	// 显示查询结果页面
+	var search= document.getElementById("search");
+	search.className = search.className.replace("showHtml","hideHtml");
+	
+	var result= document.getElementById("result");
+	result.className = result.className.replace("hideHtml","showHtml");
+	$("#result tbody").html("");
+	$("#result .aside").html("").append('<p><span class="cr">注：</span>预测中签，仅供查询</p>');
+	var htmlContent = '<tr>';
+	htmlContent += '<td >' + g_arrayWebphInfo[codeNameIndex][4] +'</td><td>'+ g_arrayWebphInfo[codeNameIndex][1] +'</td><td>' + g_arrayWebphInfo[codeNameIndex][2] + '</td>';
+	htmlContent += '<td >' + g_arrayWebphInfo[codeNameIndex][3] +'</td><td class="cr">'+ zqCount +'</td>';    
+	htmlContent += '</tr>';
+	$("tbody").append(htmlContent);
+	//新股日志
+	if(!isZq)
+	{// 未中签页面	
+		//组装日志字段			
+		g_retcode = '-1';
+		g_retmsg = '未中签';	
+		
+		$("#result .icon-title").removeClass().addClass("icon-title title-nomedal");
+		$("#result .header-title").text("很遗憾，未中签");
+		g_pageinfo = "wzq";   //未中签页面
+	}
+	else
+	{
+		// 中签页面
+		//组装日志字段
+		g_retcode = '0';
+		g_retmsg = '中签';
+		
+		$("#result .icon-title").removeClass().addClass("icon-title title-medal");
+		$("#result .header-title").text("恭喜你，中签啦");
+		g_pageinfo = "yzq";   //已中签页面
+		
+		if(g_ajaxVer)
+		{	
+			fnGetAccountBalance();
+			zqNeedMoney = g_arrayWebphInfo[codeNameIndex][3] *  zqCount;
+			var needMoney = '<td colspan="3" class="table-conclusion1"><span>申请所需金额：</span><span class="text-bigger">'+zqNeedMoney+'</span></td>';
+			//-add begin测试页面
+			var haveMoney = '<td colspan="2" class="table-conclusion2"><span>您的账户余额：</span><span class="text-bigger">'+ g_AccountBalance +'</span><span class="icon icon-ok"></span></td>';
+			//-add end
+			$("tbody").append('<tr>' + needMoney + haveMoney + '</tr>');
+		}
+	}
+	//新股日志上传
+	UploadLog('DJYZQ', g_retcode, g_retmsg, '' ,'YCX');
+}
+
+/*
+* 函数功能说明：
+* 检查配号是否有效
+参数说明:
+证券代码
+用户配号申购代码
+用户配号证券代码
+*/
+function fn_checkPhInvid(stockcode, peihaoValue1, peihaoValue2)
+ {
+
+	if (stockcode.length != 6 || peihaoValue1.length != 6 || peihaoValue2.length != 6)
+	{
+		return 0;
+	}
+	var firstChar = stockcode.substr(0, 1);
+	var firstCharToint = parseInt(firstChar);
+	switch (firstCharToint) {
+		// 如果是深圳的就这样处理
+	case 0:
+	case 3: {
+				if (peihaoValue1 == peihaoValue2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		break;
+	default: {
+				var temppeihaoValue1 = peihaoValue1.substr(3, 3);
+				var temppeihaoValue2 = peihaoValue2.substr(3, 3);
+				if (temppeihaoValue1 == temppeihaoValue2) 
+				{
+					return 1;
+				}
+			return 0;
+			}
+		break;
+	}
+	return 0;
+}
+
+/*
+* 函数功能说明：
+* 改变页面需要展示的配号内容
+*-----------------------------------------------------
+*操作步骤:
+*1.根据用户点击的下拉框的对应索引，获取对应的信息
+*2.设置相关信息到页面
+*/
+function setInfoToHtml(index)
+{
+	$("#input-num-content").css({"color":"black"});
+	$("#input-num-account").css({"color":"black"});
+	//设置配号
+	var flag = 0;
+	for (var j = 0; j < g_arrayInitialpeihaoValue.length; j++) 
+	{
+		//g_arrayWebphInfo[numIndex][0] 	证券代码
+		//g_arrayWebphInfo[numIndex][2] 	申购代码
+		//g_arrayInitialpeihaoValue[j][0] 	证券代码
+		if (fn_checkPhInvid(g_arrayWebphInfo[index][0], g_arrayInitialpeihaoValue[j][0], g_arrayWebphInfo[index][2])) 
+		{
+			var peihao_cnt = parseInt(g_arrayInitialpeihaoValue[j][2]);
+			if(peihao_cnt <= 0 || isNaN(peihao_cnt))
+			{
+				break; // 数量为0 起始配号是没有的 设置为空
+			}
+			checkNumContent(g_arrayInitialpeihaoValue[j][1]);
+			checkNumAccount(g_arrayInitialpeihaoValue[j][2]);
+			flag = 1;
+			break;
+		}
+	}
+	if(flag == 0)
+	{
+		checkNumContent('');
+		checkNumAccount('');
+		$('#input-num-content').attr("value", "未查询到您的配号");
+		$("#input-num-content").css({"color":"#c7c7c7"});
+		$('#input-num-account').attr("value", "未查询到您的配号数量");
+		$("#input-num-account").css({"color":"#c7c7c7"});
+
+	}
+	
+	//设置中签位提示
+	var zqwNotice = "";
+	array_peihaoList = fn_peihaoValueFormat(g_arrayWebphInfo[0][5]);
+	for (var i = 0; i < array_peihaoList.length; i++) 	
+	{
+		var result = array_peihaoList[i];
+		if (result.length > 1) {
+			var notice = '末“' + result[0] + '”位数: ';
+			for (var j = 1; j < result.length; j++) {
+				if (j != result.length - 1) {
+					notice = notice + result[j] + '，';
+				} else {
+					notice = notice + result[j];
+				}
+			}
+			if("" == zqwNotice) 
+			{
+				zqwNotice += '<p><span class="cr">注：</span>' + notice + '</p>';
+			}else{
+				zqwNotice += '<p>' + notice + '</p>';
+			}
+			
+		}
+	}
+	$(".aside-section").text("");
+	$(".aside-section").append(zqwNotice);
+}
+var g_init_dlg = 0;
+/*
+* 函数功能说明：
+* 展示页面
+*步骤:
+*1.初始化 g_arrayWebphInfo[0][0]对应新股的信息到页面
+*2.初始化 下拉框
+*3.展示页面
+*/
+function fn_showSgHtml() {
+	if (g_init_dlg > 0) 
+	{
+		write_html_log('配号预查询 fn_showSgHtml() 直接返回了  data:' + g_init_dlg);
+		return;
+	}
+	if (g_arrayWebphInfo.length < 1)
+	{
+		write_html_log('配号预查询 fn_showSgHtml() 初始数据无不显示，直接返回  data:' + g_arrayWebphInfo.length);
+		return;
+	}
+	g_init_dlg = 1;
+	
+	var search= document.getElementById("search");
+	search.className = search.className.replace("hideHtml","showHtml");
+	var result= document.getElementById("result");
+	result.className = result.className.replace("showHtml","hideHtml");
+	//初始化下拉框
+	var liContents = "";
+	for (var i = 0; i < g_arrayWebphInfo.length; i++) 
+	{
+		if(i == 0)
+		{
+			var index = 'index="' + i + '"';
+			liContents += '<li class="item" ' + index + '>';
+			liContents += g_arrayWebphInfo[i][0] + g_arrayWebphInfo[i][1];
+			liContents += '</li>';
+			var codeAndName = g_arrayWebphInfo[i][0] + g_arrayWebphInfo[i][1];
+			$("#input-code").text(codeAndName);
+			$("#input-code").attr("index",i);
+		}else
+		{
+			var index = 'index="' + i + '"';
+			liContents += '<li class="item" ' + index + '>';
+			liContents += g_arrayWebphInfo[i][0] + g_arrayWebphInfo[i][1];
+			liContents += '</li>';
+		}
+		
+	}
+	$("ul.form-group-options").html(liContents);
+	setInfoToHtml(0);
+	
+	if (g_htmlReqStatus == 42)
+	{
+		//新股日志上传
+		UploadLog('DJYYW', '0', '点击运营位', '', 'YCX');
+		fnFunction("show_dlg", g_showStatus);
+	}
+}
+
+function fnOnclickQRcode()//点击小二维码
+{	
+	fnSetConfigData('SJTS',g_curUserInfo,GetDateStr(0));  //点击按钮写下单XIADAN.INI
+	if (g_pageinfo == 'cxjm')  //查询明细页面埋点
+	{	
+		TA.log({id: 'zyyjy_59a61f34_296'});
+	}
+	else if (g_pageinfo == 'wzq')//未中签埋点
+	{
+		TA.log({id: 'zyyjy_59a61f75_856'});
+	}
+	else if (g_pageinfo == 'yzq')//已中签埋点
+	{
+		TA.log({id: 'zyyjy_59a61f86_548'});
+	}
+	
+	document.getElementById("QRcodeMain").style.display = "block";
+	document.getElementById("QRcodeMainCloseBtn").style.display = "block";
+}
+
+function fnOnclicktips() //点击tips
+{	
+	fnSetConfigData('SJTS',g_curUserInfo,GetDateStr(0));  //点击按钮写下单XIADAN.INI
+	document.getElementById("QRcodeMain").style.display = "block";
+	document.getElementById("QRcodeMainCloseBtn").style.display = "block";
+}
+
+function fnOnclickCloseQRcodeMain() //关闭二维码按钮
+{	
+	document.getElementById("QRcodeMainCloseBtn").style.display = "none";
+	document.getElementById("QRcodeMain").style.display = "none";
+	document.getElementById("QRcode").style.display = "block";	
+}
+function CloseQRcodeMain()//点击二维码以外的区域关闭二维码
+{
+	var activeid = document.activeElement.id; //获取正在活动的标签id
+	var QRcodeMainID = document.getElementById("QRcodeMain");//获取完整二维码id
+	if(activeid == "QRcode" || activeid == "tips") //点击的不是二维码或提示语
+	{
+		document.getElementById("QRcode").style.display = "none";
+		document.getElementById("tips").style.display = "none";
+		return;
+	}
+	if(QRcodeMainID.style.display == "block")
+	{
+		if(activeid != "QRcodeMain")
+		{
+			QRcodeMainID.style.display = "none";
+			document.getElementById("QRcode").style.display = "block";
+			if (document.getElementById("QRcodeMain").style.display == "none")
+			{
+				document.getElementById("QRcodeMainCloseBtn").style.display = "none";
+			}
+		}
+		else
+		{
+			document.getElementById("QRcode").style.display = "none";
+		}
+	}
+}
+</script>
+</body>
+</html>
