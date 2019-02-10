@@ -61,10 +61,9 @@ type：委托方式，B-买，S-卖
 ```
 成功的格式：
 {
-   "order_id" : "xxxx",
+   "order_id" : "xxxx", // 合同编号
    "status" : "OK"
 }
-order_id:合同编号
 ```
 ##### 撤单
 ```
