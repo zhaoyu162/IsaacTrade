@@ -120,20 +120,20 @@ order_id:合同编号
 {
    "data" : [
       {
-         "cost_price" : 2.8279999999999998,
-         "cost_value" : 257.82999999999998,
-         "curr_profit" : -23.399999999999999,
-         "index" : 0,
-         "market" : "SH",
-         "market_value" : 259.39999999999998,
-         "profit_ratio" : -8.2743990000000007,
-         "stock_code" : "510050",
-         "stock_name" : "50ETF",
-         "stock_type" : "上海Ａ股",
-         "vol_actual" : 100,
-         "vol_evenup" : 100,
-         "vol_hold" : 100,
-         "vol_remain" : 100
+         "cost_price" : 2.8279999999999998,     //成本价
+         "cost_value" : 257.82999999999998,     //买入市值
+         "curr_profit" : -23.399999999999999,   //浮盈
+         "index" : 0,                           //序号
+         "market" : "SH",                       //市场
+         "market_value" : 259.39999999999998,   //当前市值
+         "profit_ratio" : -8.2743990000000007,  //盈亏率
+         "stock_code" : "510050",               //代码
+         "stock_name" : "50ETF",                //名称
+         "stock_type" : "上海Ａ股",              //股票类型
+         "vol_actual" : 100,                    //实际数量
+         "vol_evenup" : 100,                    //可卖数量
+         "vol_hold" : 100,                      //持股数量
+         "vol_remain" : 100                     //股票余额
       },
    ],
    "status" : "OK"
@@ -147,16 +147,16 @@ order_id:合同编号
 ```
 {
    "data" : {
-      "asset_account" : "5207707",
-      "free_amount" : "",
-      "free_capital" : "-526.90",
-      "frozen_capital" : "",
-      "position_profit" : "-24.50",
-      "stock_cw" : "0.00",
-      "stock_market_value" : "526.90",
-      "today_profit" : "------",
-      "total_asset" : "",
-      "total_capital" : ""
+      "asset_account" : "5207707",           // 资金账号
+      "free_amount" : "",                    // 资金余额
+      "free_capital" : "-526.90",            // 可取金额
+      "frozen_capital" : "",                 // 冻结金额
+      "position_profit" : "-24.50",          // 持仓盈亏
+      "stock_cw" : "0.00",                   // 
+      "stock_market_value" : "526.90",       // 股票总市值
+      "today_profit" : "------",             // 当日盈亏
+      "total_asset" : "",                    // 总资产
+      "total_capital" : ""                   // 可用金额
    },
    "status" : "OK"
 }
