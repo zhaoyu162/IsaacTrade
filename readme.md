@@ -1,4 +1,4 @@
-# 以撒程序化交易接口
+# 以撒程序化交易接口 (2019.11月以后的同花顺版本)
 本接口以第三方交易软件（同花顺）插件的方式运行，因此同花顺支持的券商都可以正常使用。
 ## 支持的券商列表
 ```
@@ -49,13 +49,17 @@ status为ERROR
 ```
 #### 委托下单
 ```
-/placeorder?symbol=SZ002018&price=1.00&volume=100&type=B
+/placeorder?symbol=SZ002018&price=1.00&volume=100&type=B             // 普通账户
+```
+```
+/placeorder?symbol=SZ002018&price=1.00&volume=100&type=B&credit=dbmr // 信用账号
 ```
 ```
 symbol:证券代码，前缀 SH-上海，SZ-深圳
-price: 委托价格
+price: 委托价格,(普通账号：-1为市价委托)
 volume:委托数量，单位股
 type：委托方式，B-买，S-卖
+credit: 担保品买入：dbmr, 担保品卖出dbmc, 融资买入:rzmr,融券卖出:rqmc,买券还券:mqhq,卖券还款:mqhk
 ```
 返回值为Json格式
 ```
